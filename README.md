@@ -1,60 +1,292 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Admin Panel Template - Laravel Application
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A comprehensive, pre-built admin panel template built with Laravel 12, featuring a modern UI, role-based access control, two-factor authentication, email verification, and extensive system configuration options.
 
-## About Laravel
+## 🚀 Features
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+### Core Features
+- **Role-Based Access Control (RBAC)**: Separate admin and client interfaces
+- **Two-Factor Authentication (2FA)**: Google Authenticator support with recovery codes
+- **Email Verification**: OTP-based email verification system
+- **User Management**: Complete user CRUD operations with soft delete
+- **Login Activity Tracking**: Monitor user login sessions and activities
+- **Secure Image Serving**: Encrypted avatar/image serving for enhanced security
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### Authentication & Security
+- **Custom Login/Registration Control**: Enable/disable user registration and login
+- **Force Email Verification**: Require email verification before account access
+- **Force 2FA**: Require two-factor authentication for all users
+- **Password Reset**: Secure password reset with email notifications
+- **Session Management**: Track and manage user sessions
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### System Configuration
+- **General Configuration**: App name, email, timezone, language settings
+- **Communication Channels**: SMTP configuration with database storage
+- **Payment Gateway**: Payment gateway configuration
+- **Authentication & SSO**: Control authentication settings
+- **reCAPTCHA**: Google reCAPTCHA integration
+- **Storage Settings**: File storage configuration (local/S3)
+- **Cache Management**: Cache configuration and management
+- **FAQ Management**: Create and manage FAQs with categories and icons
 
-## Learning Laravel
+### User Features
+- **Profile Management**: Update profile information and avatar
+- **Account Security**: Change password, manage 2FA settings
+- **Recovery Codes**: Generate and regenerate 2FA recovery codes
+- **Support & Help**: Public FAQ page with search functionality
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+### Admin Panel Features
+- **Dashboard**: Admin overview dashboard
+- **Users Management**: View, create, edit, delete, and manage user accounts
+- **System Configuration**: Comprehensive system settings management
+- **API Management**: API management interface (ready for implementation)
+- **FAQ Management**: Create, edit, and manage FAQs
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## 📋 Requirements
 
-## Laravel Sponsors
+- PHP >= 8.2
+- Composer
+- Node.js & NPM
+- MySQL/PostgreSQL/SQLite
+- Web server (Apache/Nginx) or PHP built-in server
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## 🔧 Installation
 
-### Premium Partners
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd pingxen
+   ```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+2. **Install PHP dependencies**
+   ```bash
+   composer install
+   ```
 
-## Contributing
+3. **Install Node dependencies**
+   ```bash
+   npm install
+   ```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+4. **Environment setup**
+   ```bash
+   cp .env.example .env
+   php artisan key:generate
+   ```
 
-## Code of Conduct
+5. **Configure database**
+   - Update `.env` with your database credentials:
+     ```env
+     DB_CONNECTION=mysql
+     DB_HOST=127.0.0.1
+     DB_PORT=3306
+     DB_DATABASE=your_database
+     DB_USERNAME=your_username
+     DB_PASSWORD=your_password
+     ```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+6. **Run migrations**
+   ```bash
+   php artisan migrate
+   ```
 
-## Security Vulnerabilities
+7. **Seed initial data (optional)**
+   ```bash
+   php artisan db:seed
+   ```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+8. **Build assets**
+   ```bash
+   npm run build
+   # Or for development:
+   npm run dev
+   ```
 
-## License
+9. **Start the development server**
+   ```bash
+   php artisan serve
+   ```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
-# pingxeno
+## ⚙️ Configuration
+
+### Initial Setup
+
+1. **Create Admin User**
+   - Register a new user or use a database seeder
+   - Update the user's `role` field to `1` in the database to make them an admin
+
+2. **Configure SMTP** (for email functionality)
+   - Navigate to `/panel/comm-channels`
+   - Enter your SMTP settings
+   - Test email sending
+
+3. **System Configuration**
+   - Navigate to `/panel/system-configuration`
+   - Configure app name, email, timezone, and other settings
+
+### User Roles
+
+- **Admin (Role: 1)**: Full access to admin panel and all features
+- **Client (Role: 2)**: Access to client dashboard and profile features
+
+### Authentication Settings
+
+Configure authentication behavior in `/panel/auth-sso`:
+- **User Registration**: Enable/disable new user registration
+- **User Login**: Enable/disable user login
+- **Force Email Verification**: Require email verification for all users
+- **Force Two Factor Authentication**: Require 2FA for all users
+
+## 🎨 UI/UX Features
+
+- **Modern Design**: Clean, responsive admin panel interface
+- **Role-Based Navigation**: Different menu structures for admin and client users
+- **Active Menu Highlighting**: Smart menu state management
+- **Responsive Layout**: Mobile-friendly design
+- **Icon Support**: Font icons for better visual experience
+
+## 📧 Email Features
+
+- **SMTP Configuration**: Database-stored SMTP settings
+- **Email Verification OTP**: Time-stamped OTP emails
+- **Password Reset**: Custom password reset emails
+- **Email Templates**: Beautiful, responsive email layouts
+
+## 🔐 Security Features
+
+- **Encrypted Storage**: Sensitive data (passwords, 2FA secrets) are encrypted
+- **Secure Image Serving**: Encrypted paths for avatar/image access
+- **Session Tracking**: Monitor active sessions and login activities
+- **CSRF Protection**: Laravel's built-in CSRF protection
+- **Password Hashing**: Bcrypt password hashing
+- **2FA Recovery Codes**: Secure recovery code generation and management
+
+## 📁 Project Structure
+
+```
+pingxen/
+├── app/
+│   ├── Http/
+│   │   ├── Controllers/
+│   │   │   ├── Auth/          # Authentication controllers
+│   │   │   ├── Panel/         # Admin panel controllers
+│   │   │   └── Account/        # User account controllers
+│   │   ├── Middleware/        # Custom middleware
+│   │   └── Requests/          # Form request validation
+│   ├── Mail/                  # Mailable classes
+│   ├── Models/                # Eloquent models
+│   ├── Services/              # Business logic services
+│   └── Notifications/         # Notification classes
+├── database/
+│   ├── migrations/            # Database migrations
+│   └── seeders/               # Database seeders
+├── resources/
+│   ├── views/                 # Blade templates
+│   │   ├── auth/              # Authentication views
+│   │   ├── panel/             # Admin panel views
+│   │   ├── layouts/           # Layout components
+│   │   └── emails/             # Email templates
+│   ├── css/                   # Stylesheets
+│   └── js/                    # JavaScript files
+└── routes/
+    ├── web.php                # Web routes
+    ├── auth.php               # Authentication routes
+    └── panel.php              # Admin panel routes
+```
+
+## 🛠️ Development
+
+### Running Tests
+```bash
+php artisan test
+```
+
+### Code Style
+```bash
+./vendor/bin/pint
+```
+
+### Development Server with Hot Reload
+```bash
+composer run dev
+```
+
+## 📝 Key Routes
+
+### Public Routes
+- `/` - Welcome page
+- `/login` - Login page
+- `/register` - Registration page
+- `/forgot-password` - Password reset request
+- `/reset-password` - Password reset form
+- `/support` - Public support/FAQ page
+
+### Authenticated Routes
+- `/dashboard` - Client dashboard
+- `/profile` - User profile
+- `/account/security/password` - Change password
+- `/account/security/two-factor` - 2FA management
+- `/verify-email-otp` - Email verification
+
+### Admin Routes
+- `/panel` - Admin dashboard
+- `/panel/users` - User management
+- `/panel/system-configuration` - System settings
+- `/panel/comm-channels` - SMTP configuration
+- `/panel/auth-sso` - Authentication settings
+- `/panel/faqs` - FAQ management
+
+## 🔄 Workflow
+
+### Login Flow
+1. User enters credentials
+2. If 2FA enabled → Redirect to 2FA verification
+3. If email verification required → Redirect to email verification
+4. Role-based redirect:
+   - Admin → `/panel`
+   - Client → `/dashboard`
+
+### Registration Flow
+1. User registers
+2. If email verification required → Redirect to email verification
+3. Otherwise → Redirect to `/dashboard`
+
+## 📦 Dependencies
+
+### PHP Packages
+- `laravel/framework` ^12.0
+- `pragmarx/google2fa-laravel` ^2.3 - Two-factor authentication
+- `bacon/bacon-qr-code` ^3.0 - QR code generation
+- `league/flysystem-aws-s3-v3` ^3.0 - AWS S3 storage support
+
+### JavaScript Packages
+- See `package.json` for frontend dependencies
+
+## 🐛 Troubleshooting
+
+### Email Not Sending
+- Check SMTP configuration in `/panel/comm-channels`
+- Verify SMTP credentials are correct
+- Check application logs: `storage/logs/laravel.log`
+
+### 2FA Not Working
+- Ensure `pragmarx/google2fa-laravel` is installed
+- Check that user has properly set up 2FA
+- Verify time synchronization on server
+
+### Image Upload Issues
+- Check file permissions on `storage/app/public`
+- Verify storage link: `php artisan storage:link`
+- Check file size limits in PHP configuration
+
+## 📄 License
+
+This project is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+## 🤝 Support
+
+For support, visit the `/support` page or contact the administrator.
+
+---
+
+**Built with ❤️ using Laravel**

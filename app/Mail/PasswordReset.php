@@ -72,3 +72,4 @@ class PasswordReset extends Mailable
     }
 }
 
+
