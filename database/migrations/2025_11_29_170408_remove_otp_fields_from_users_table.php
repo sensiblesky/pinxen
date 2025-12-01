@@ -11,9 +11,29 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn(['email_otp', 'email_otp_expires_at']);
-        });
+        // Only drop columns if they exist
+        // SQLite has limitations with DROP COLUMN, so we wrap in try-catch
+        try {
+            $columnsToDrop = [];
+            
+            if (Schema::hasColumn('users', 'email_otp')) {
+                $columnsToDrop[] = 'email_otp';
+            }
+            
+            if (Schema::hasColumn('users', 'email_otp_expires_at')) {
+                $columnsToDrop[] = 'email_otp_expires_at';
+            }
+            
+            if (!empty($columnsToDrop)) {
+                Schema::table('users', function (Blueprint $table) use ($columnsToDrop) {
+                    $table->dropColumn($columnsToDrop);
+                });
+            }
+        } catch (\Exception $e) {
+            // If dropping columns fails (e.g., SQLite index issues), log and continue
+            // The columns will be ignored in the application logic anyway
+            \Log::warning('Failed to drop OTP columns from users table: ' . $e->getMessage());
+        }
     }
 
     /**

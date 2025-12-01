@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Facades\Auth;
 
-class CheckAdminRole
+class CheckClientRole
 {
     /**
      * Handle an incoming request.
@@ -21,10 +21,10 @@ class CheckAdminRole
             return redirect()->route('login');
         }
 
-        // Check if user has role 1 (Admin)
-        if (Auth::user()->role != 1) {
-            // Redirect client to their dashboard
-            return redirect()->route('dashboard');
+        // Check if user has role 2 (Client)
+        if (Auth::user()->role != 2) {
+            // Redirect admin to their dashboard
+            return redirect()->route('panel');
         }
 
         return $next($request);

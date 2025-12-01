@@ -7,10 +7,7 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'force.email.verification', 'force.2fa', 'verified'])->name('dashboard');
-
+// Shared routes accessible by both admin and client
 Route::middleware(['auth', 'force.email.verification', 'force.2fa'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

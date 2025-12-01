@@ -13,11 +13,15 @@ return Application::configure(basePath: dirname(__DIR__))
         then: function () {
             Route::middleware('web')
                 ->group(base_path('routes/panel.php'));
+            
+            Route::middleware('web')
+                ->group(base_path('routes/client.php'));
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'admin' => \App\Http\Middleware\CheckAdminRole::class,
+            'client' => \App\Http\Middleware\CheckClientRole::class,
             'registration.enabled' => \App\Http\Middleware\CheckRegistrationEnabled::class,
             'login.enabled' => \App\Http\Middleware\CheckLoginEnabled::class,
             'force.email.verification' => \App\Http\Middleware\ForceEmailVerification::class,
