@@ -14,6 +14,8 @@ Route::middleware(['auth', 'force.email.verification', 'force.2fa', 'admin'])->g
     Route::post('panel/users/{user}/toggle-status', [\App\Http\Controllers\Panel\UserController::class, 'toggleStatus'])->name('panel.users.toggle-status');
     Route::post('panel/users/{user}/restore', [\App\Http\Controllers\Panel\UserController::class, 'restore'])->name('panel.users.restore');
     Route::post('panel/users/{user}/update-language-timezone', [\App\Http\Controllers\Panel\UserController::class, 'updateLanguageTimezone'])->name('panel.users.update-language-timezone');
+    Route::post('panel/users/{user}/assign-subscription', [\App\Http\Controllers\Panel\UserController::class, 'assignSubscription'])->name('panel.users.assign-subscription');
+    Route::post('panel/users/{user}/subscriptions/{subscription}/update-status', [\App\Http\Controllers\Panel\UserController::class, 'updateSubscriptionStatus'])->name('panel.users.subscriptions.update-status');
     
     // System Configuration
     Route::get('panel/system-configuration', [\App\Http\Controllers\Panel\SystemConfigurationController::class, 'index'])->name('panel.system-configuration.index');
@@ -70,5 +72,45 @@ Route::middleware(['auth', 'force.email.verification', 'force.2fa', 'admin'])->g
             'update' => 'panel.users.update',
             'destroy' => 'panel.users.destroy',
         ]);
+    
+    // Subscription Plans Management
+    Route::resource('panel/subscription-plans', \App\Http\Controllers\Panel\SubscriptionPlanController::class)
+        ->except(['edit'])
+        ->names([
+            'index' => 'panel.subscription-plans.index',
+            'create' => 'panel.subscription-plans.create',
+            'store' => 'panel.subscription-plans.store',
+            'show' => 'panel.subscription-plans.show',
+            'update' => 'panel.subscription-plans.update',
+            'destroy' => 'panel.subscription-plans.destroy',
+        ]);
+    
+    // Plan Features Management
+    Route::resource('panel/plan-features', \App\Http\Controllers\Panel\PlanFeatureController::class)
+        ->names([
+            'index' => 'panel.plan-features.index',
+            'create' => 'panel.plan-features.create',
+            'store' => 'panel.plan-features.store',
+            'show' => 'panel.plan-features.show',
+            'edit' => 'panel.plan-features.edit',
+            'update' => 'panel.plan-features.update',
+            'destroy' => 'panel.plan-features.destroy',
+        ]);
+    
+    // Subscribers Management
+    Route::get('panel/subscribers', [\App\Http\Controllers\Panel\SubscriberController::class, 'index'])->name('panel.subscribers.index');
+    Route::get('panel/subscribers/data', [\App\Http\Controllers\Panel\SubscriberController::class, 'getSubscribersData'])->name('panel.subscribers.data');
+    Route::post('panel/subscribers/{user}/subscriptions/{subscription}/update-status', [\App\Http\Controllers\Panel\SubscriberController::class, 'updateStatus'])->name('panel.subscribers.update-status');
+    
+    // Reports
+    Route::get('panel/reports/subscriptions', [\App\Http\Controllers\Panel\ReportController::class, 'subscriptions'])->name('panel.reports.subscriptions');
+    Route::get('panel/reports/subscriptions/data', [\App\Http\Controllers\Panel\ReportController::class, 'getSubscriptionsData'])->name('panel.reports.subscriptions.data');
+    Route::get('panel/reports/subscriptions/export', [\App\Http\Controllers\Panel\ReportController::class, 'exportSubscriptions'])->name('panel.reports.subscriptions.export');
+    Route::get('panel/reports/subscriptions/export-excel', [\App\Http\Controllers\Panel\ReportController::class, 'exportSubscriptionsExcel'])->name('panel.reports.subscriptions.export-excel');
+    
+    Route::get('panel/reports/users', [\App\Http\Controllers\Panel\ReportController::class, 'users'])->name('panel.reports.users');
+    Route::get('panel/reports/users/data', [\App\Http\Controllers\Panel\ReportController::class, 'getUsersData'])->name('panel.reports.users.data');
+    Route::get('panel/reports/users/export', [\App\Http\Controllers\Panel\ReportController::class, 'exportUsers'])->name('panel.reports.users.export');
+    Route::get('panel/reports/users/export-excel', [\App\Http\Controllers\Panel\ReportController::class, 'exportUsersExcel'])->name('panel.reports.users.export-excel');
 });
 

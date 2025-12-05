@@ -235,11 +235,20 @@ class UserController extends Controller
     public function show(User $user): View
     {
         // Eager load relationships to avoid N+1 queries
-        $user->load(['language', 'timezone']);
+        $user->load(['language', 'timezone', 'subscriptions.subscriptionPlan', 'subscriptions.assignedBy', 'subscriptions.payment', 'activeSubscription.subscriptionPlan', 'activeSubscription.assignedBy', 'activeSubscription.payment']);
         
         $languages = \App\Models\Language::where('is_active', true)->get();
         $timezones = \App\Models\Timezone::where('is_active', true)->get();
-        return view('panel.users.show', compact('user', 'languages', 'timezones'));
+        $subscriptionPlans = \App\Models\SubscriptionPlan::active()->ordered()->get();
+        
+        // Get IDs of plans the user already has active subscriptions to
+        $activePlanIds = \App\Models\UserSubscription::where('user_id', $user->id)
+            ->where('status', 'active')
+            ->where('ends_at', '>', now())
+            ->pluck('subscription_plan_id')
+            ->toArray();
+        
+        return view('panel.users.show', compact('user', 'languages', 'timezones', 'subscriptionPlans', 'activePlanIds'));
     }
 
     /**
@@ -445,5 +454,108 @@ class UserController extends Controller
 
         return redirect()->route('panel.users.show', $user)
             ->with('success', 'Language and timezone updated successfully.');
+    }
+
+    /**
+     * Assign a subscription to a user.
+     */
+    public function assignSubscription(Request $request, User $user): RedirectResponse
+    {
+        $validated = $request->validate([
+            'subscription_plan_id' => ['required', 'exists:subscription_plans,id'],
+            'billing_period' => ['required', 'in:monthly,yearly'],
+            'status' => ['required', 'in:active,pending,cancelled,expired'],
+        ]);
+
+        // Check if user already has an active subscription to this plan
+        $existingSubscription = \App\Models\UserSubscription::where('user_id', $user->id)
+            ->where('subscription_plan_id', $validated['subscription_plan_id'])
+            ->where('status', 'active')
+            ->where('ends_at', '>', now())
+            ->first();
+
+        if ($existingSubscription) {
+            return redirect()->route('panel.users.show', $user)
+                ->with('error', 'User already has an active subscription to this plan. Please cancel or expire the existing subscription first.');
+        }
+
+        // Get the subscription plan
+        $plan = \App\Models\SubscriptionPlan::findOrFail($validated['subscription_plan_id']);
+        
+        // Calculate price based on billing period
+        $price = $plan->getPrice($validated['billing_period']);
+
+        // Auto-calculate start and end dates
+        $startsAt = now();
+        $endsAt = $validated['billing_period'] === 'monthly' 
+            ? now()->addMonth() 
+            : now()->addYear();
+
+        // Deactivate any existing active subscription for the user if a new one is being assigned as active
+        if ($validated['status'] === 'active') {
+            $user->subscriptions()
+                ->where('status', 'active')
+                ->where('ends_at', '>', now())
+                ->update(['status' => 'expired', 'ends_at' => now()]);
+        }
+
+        // Create the subscription
+        $subscription = \App\Models\UserSubscription::create([
+            'user_id' => $user->id,
+            'subscription_plan_id' => $validated['subscription_plan_id'],
+            'billing_period' => $validated['billing_period'],
+            'price' => $price,
+            'starts_at' => $startsAt,
+            'ends_at' => $endsAt,
+            'status' => $validated['status'],
+            'assigned_by' => auth()->id(), // Track who assigned this subscription
+        ]);
+
+        // Update user's subscription_plan_id if status is active
+        if ($validated['status'] === 'active') {
+            $user->update([
+                'subscription_plan_id' => $validated['subscription_plan_id'],
+            ]);
+        }
+
+        return redirect()->route('panel.users.show', $user)
+            ->with('success', 'Subscription assigned successfully.');
+    }
+
+    /**
+     * Update subscription status (cancel or mark as expired).
+     */
+    public function updateSubscriptionStatus(Request $request, User $user, \App\Models\UserSubscription $subscription): RedirectResponse
+    {
+        // Ensure the subscription belongs to the user
+        if ($subscription->user_id !== $user->id) {
+            return redirect()->route('panel.users.show', $user)
+                ->with('error', 'Subscription not found for this user.');
+        }
+
+        $validated = $request->validate([
+            'status' => ['required', 'in:cancelled,expired'],
+        ]);
+
+        // Update subscription status
+        $subscription->status = $validated['status'];
+        
+        if ($validated['status'] === 'cancelled') {
+            $subscription->cancelled_at = now();
+        } elseif ($validated['status'] === 'expired') {
+            $subscription->ends_at = now();
+        }
+        
+        $subscription->save();
+
+        // If this was the active subscription, update user's subscription_plan_id
+        if ($subscription->status !== 'active' && $user->subscription_plan_id === $subscription->subscription_plan_id) {
+            $user->update(['subscription_plan_id' => null]);
+        }
+
+        $statusLabel = $validated['status'] === 'cancelled' ? 'cancelled' : 'expired';
+        
+        return redirect()->route('panel.users.show', $user)
+            ->with('success', "Subscription has been {$statusLabel} successfully.");
     }
 }

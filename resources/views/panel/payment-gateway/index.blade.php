@@ -58,21 +58,25 @@
                             <li class="nav-item">
                                 <a class="nav-link" data-bs-toggle="tab" role="tab" href="#razorpay-tab" aria-selected="false">
                                     <i class="ri-money-rupee-circle-line me-1"></i>Razorpay
+                                    <span class="badge bg-warning text-dark ms-1">Coming Soon</span>
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" data-bs-toggle="tab" role="tab" href="#square-tab" aria-selected="false">
                                     <i class="ri-square-line me-1"></i>Square
+                                    <span class="badge bg-warning text-dark ms-1">Coming Soon</span>
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" data-bs-toggle="tab" role="tab" href="#authorize-tab" aria-selected="false">
                                     <i class="ri-shield-check-line me-1"></i>Authorize.Net
+                                    <span class="badge bg-warning text-dark ms-1">Coming Soon</span>
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" data-bs-toggle="tab" role="tab" href="#mollie-tab" aria-selected="false">
                                     <i class="ri-global-line me-1"></i>Mollie
+                                    <span class="badge bg-warning text-dark ms-1">Coming Soon</span>
                                 </a>
                             </li>
                         </ul>
@@ -80,6 +84,13 @@
                             <!-- Stripe Tab -->
                             <div class="tab-pane fade show active" id="stripe-tab" role="tabpanel">
                                 <div class="row gy-3">
+                                    <div class="col-xl-12">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="stripe_enabled" name="stripe_enabled" value="1" {{ old('stripe_enabled', $settings['stripe_enabled'] ?? '0') === '1' ? 'checked' : '' }}>
+                                            <label class="form-check-label fw-semibold" for="stripe_enabled">Enable Stripe</label>
+                                        </div>
+                                        <span class="d-block fs-12 text-muted mt-1">Enable or disable Stripe payment gateway</span>
+                                    </div>
                                     <div class="col-xl-6">
                                         <label for="stripe_publishable_key" class="form-label">Publishable Key</label>
                                         <input type="text" class="form-control @error('stripe_publishable_key') is-invalid @enderror" id="stripe_publishable_key" name="stripe_publishable_key" value="{{ old('stripe_publishable_key', $settings['stripe_publishable_key'] ?? '') }}" placeholder="pk_test_...">
@@ -129,6 +140,13 @@
                             <!-- PayPal Tab -->
                             <div class="tab-pane fade" id="paypal-tab" role="tabpanel">
                                 <div class="row gy-3">
+                                    <div class="col-xl-12">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="paypal_enabled" name="paypal_enabled" value="1" {{ old('paypal_enabled', $settings['paypal_enabled'] ?? '0') === '1' ? 'checked' : '' }}>
+                                            <label class="form-check-label fw-semibold" for="paypal_enabled">Enable PayPal</label>
+                                        </div>
+                                        <span class="d-block fs-12 text-muted mt-1">Enable or disable PayPal payment gateway</span>
+                                    </div>
                                     <div class="col-xl-6">
                                         <label for="paypal_client_id" class="form-label">Client ID</label>
                                         <input type="text" class="form-control @error('paypal_client_id') is-invalid @enderror" id="paypal_client_id" name="paypal_client_id" value="{{ old('paypal_client_id', $settings['paypal_client_id'] ?? '') }}" placeholder="Your PayPal Client ID">
@@ -164,144 +182,148 @@
 
                             <!-- Razorpay Tab -->
                             <div class="tab-pane fade" id="razorpay-tab" role="tabpanel">
+                                <div class="alert alert-info mb-3">
+                                    <i class="ri-information-line me-2"></i>
+                                    <strong>Coming Soon!</strong> Razorpay payment gateway integration is currently under development and will be available soon.
+                                </div>
                                 <div class="row gy-3">
-                                    <div class="col-xl-6">
-                                        <label for="razorpay_key_id" class="form-label">Key ID</label>
-                                        <input type="text" class="form-control @error('razorpay_key_id') is-invalid @enderror" id="razorpay_key_id" name="razorpay_key_id" value="{{ old('razorpay_key_id', $settings['razorpay_key_id'] ?? '') }}" placeholder="rzp_test_...">
-                                        @error('razorpay_key_id')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
+                                    <div class="col-xl-12">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="razorpay_enabled" name="razorpay_enabled" value="1" disabled>
+                                            <label class="form-check-label fw-semibold text-muted" for="razorpay_enabled">Enable Razorpay</label>
+                                        </div>
+                                        <span class="d-block fs-12 text-muted mt-1">This feature is coming soon</span>
                                     </div>
                                     <div class="col-xl-6">
-                                        <label for="razorpay_key_secret" class="form-label">Key Secret</label>
+                                        <label for="razorpay_key_id" class="form-label text-muted">Key ID</label>
+                                        <input type="text" class="form-control" id="razorpay_key_id" name="razorpay_key_id" placeholder="rzp_test_..." disabled>
+                                    </div>
+                                    <div class="col-xl-6">
+                                        <label for="razorpay_key_secret" class="form-label text-muted">Key Secret</label>
                                         <div class="input-group">
-                                            <input type="password" class="form-control @error('razorpay_key_secret') is-invalid @enderror" id="razorpay_key_secret" name="razorpay_key_secret" value="{{ old('razorpay_key_secret', $settings['razorpay_key_secret'] ?? '') }}" placeholder="Your Razorpay Key Secret">
-                                            <button class="btn btn-light" type="button" id="toggle_razorpay_secret">
-                                                <i class="ri-eye-line" id="razorpay_secret_icon"></i>
+                                            <input type="password" class="form-control" id="razorpay_key_secret" name="razorpay_key_secret" placeholder="Your Razorpay Key Secret" disabled>
+                                            <button class="btn btn-light" type="button" disabled>
+                                                <i class="ri-eye-line"></i>
                                             </button>
                                         </div>
-                                        @error('razorpay_key_secret')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
-                                        <span class="d-block fs-12 text-muted mt-1">Leave blank to keep current secret</span>
                                     </div>
                                     <div class="col-xl-6">
-                                        <label for="razorpay_mode" class="form-label">Mode</label>
-                                        <select class="form-control @error('razorpay_mode') is-invalid @enderror" id="razorpay_mode" name="razorpay_mode" data-trigger>
-                                            <option value="sandbox" {{ old('razorpay_mode', $settings['razorpay_mode'] ?? 'sandbox') == 'sandbox' ? 'selected' : '' }}>Sandbox</option>
-                                            <option value="live" {{ old('razorpay_mode', $settings['razorpay_mode'] ?? '') == 'live' ? 'selected' : '' }}>Live</option>
+                                        <label for="razorpay_mode" class="form-label text-muted">Mode</label>
+                                        <select class="form-control" id="razorpay_mode" name="razorpay_mode" disabled>
+                                            <option value="sandbox">Sandbox</option>
+                                            <option value="live">Live</option>
                                         </select>
-                                        @error('razorpay_mode')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
                                     </div>
                                 </div>
                             </div>
 
                             <!-- Square Tab -->
                             <div class="tab-pane fade" id="square-tab" role="tabpanel">
+                                <div class="alert alert-info mb-3">
+                                    <i class="ri-information-line me-2"></i>
+                                    <strong>Coming Soon!</strong> Square payment gateway integration is currently under development and will be available soon.
+                                </div>
                                 <div class="row gy-3">
-                                    <div class="col-xl-6">
-                                        <label for="square_application_id" class="form-label">Application ID</label>
-                                        <input type="text" class="form-control @error('square_application_id') is-invalid @enderror" id="square_application_id" name="square_application_id" value="{{ old('square_application_id', $settings['square_application_id'] ?? '') }}" placeholder="Your Square Application ID">
-                                        @error('square_application_id')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
+                                    <div class="col-xl-12">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="square_enabled" name="square_enabled" value="1" disabled>
+                                            <label class="form-check-label fw-semibold text-muted" for="square_enabled">Enable Square</label>
+                                        </div>
+                                        <span class="d-block fs-12 text-muted mt-1">This feature is coming soon</span>
                                     </div>
                                     <div class="col-xl-6">
-                                        <label for="square_access_token" class="form-label">Access Token</label>
+                                        <label for="square_application_id" class="form-label text-muted">Application ID</label>
+                                        <input type="text" class="form-control" id="square_application_id" name="square_application_id" placeholder="Your Square Application ID" disabled>
+                                    </div>
+                                    <div class="col-xl-6">
+                                        <label for="square_access_token" class="form-label text-muted">Access Token</label>
                                         <div class="input-group">
-                                            <input type="password" class="form-control @error('square_access_token') is-invalid @enderror" id="square_access_token" name="square_access_token" value="{{ old('square_access_token', $settings['square_access_token'] ?? '') }}" placeholder="Your Square Access Token">
-                                            <button class="btn btn-light" type="button" id="toggle_square_token">
-                                                <i class="ri-eye-line" id="square_token_icon"></i>
+                                            <input type="password" class="form-control" id="square_access_token" name="square_access_token" placeholder="Your Square Access Token" disabled>
+                                            <button class="btn btn-light" type="button" disabled>
+                                                <i class="ri-eye-line"></i>
                                             </button>
                                         </div>
-                                        @error('square_access_token')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
-                                        <span class="d-block fs-12 text-muted mt-1">Leave blank to keep current token</span>
                                     </div>
                                     <div class="col-xl-6">
-                                        <label for="square_location_id" class="form-label">Location ID</label>
-                                        <input type="text" class="form-control @error('square_location_id') is-invalid @enderror" id="square_location_id" name="square_location_id" value="{{ old('square_location_id', $settings['square_location_id'] ?? '') }}" placeholder="Your Square Location ID">
-                                        @error('square_location_id')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
+                                        <label for="square_location_id" class="form-label text-muted">Location ID</label>
+                                        <input type="text" class="form-control" id="square_location_id" name="square_location_id" placeholder="Your Square Location ID" disabled>
                                     </div>
                                     <div class="col-xl-6">
-                                        <label for="square_mode" class="form-label">Mode</label>
-                                        <select class="form-control @error('square_mode') is-invalid @enderror" id="square_mode" name="square_mode" data-trigger>
-                                            <option value="sandbox" {{ old('square_mode', $settings['square_mode'] ?? 'sandbox') == 'sandbox' ? 'selected' : '' }}>Sandbox</option>
-                                            <option value="live" {{ old('square_mode', $settings['square_mode'] ?? '') == 'live' ? 'selected' : '' }}>Live</option>
+                                        <label for="square_mode" class="form-label text-muted">Mode</label>
+                                        <select class="form-control" id="square_mode" name="square_mode" disabled>
+                                            <option value="sandbox">Sandbox</option>
+                                            <option value="live">Live</option>
                                         </select>
-                                        @error('square_mode')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
                                     </div>
                                 </div>
                             </div>
 
                             <!-- Authorize.Net Tab -->
                             <div class="tab-pane fade" id="authorize-tab" role="tabpanel">
+                                <div class="alert alert-info mb-3">
+                                    <i class="ri-information-line me-2"></i>
+                                    <strong>Coming Soon!</strong> Authorize.Net payment gateway integration is currently under development and will be available soon.
+                                </div>
                                 <div class="row gy-3">
-                                    <div class="col-xl-6">
-                                        <label for="authorize_net_api_login_id" class="form-label">API Login ID</label>
-                                        <input type="text" class="form-control @error('authorize_net_api_login_id') is-invalid @enderror" id="authorize_net_api_login_id" name="authorize_net_api_login_id" value="{{ old('authorize_net_api_login_id', $settings['authorize_net_api_login_id'] ?? '') }}" placeholder="Your Authorize.Net API Login ID">
-                                        @error('authorize_net_api_login_id')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
+                                    <div class="col-xl-12">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="authorize_net_enabled" name="authorize_net_enabled" value="1" disabled>
+                                            <label class="form-check-label fw-semibold text-muted" for="authorize_net_enabled">Enable Authorize.Net</label>
+                                        </div>
+                                        <span class="d-block fs-12 text-muted mt-1">This feature is coming soon</span>
                                     </div>
                                     <div class="col-xl-6">
-                                        <label for="authorize_net_transaction_key" class="form-label">Transaction Key</label>
+                                        <label for="authorize_net_api_login_id" class="form-label text-muted">API Login ID</label>
+                                        <input type="text" class="form-control" id="authorize_net_api_login_id" name="authorize_net_api_login_id" placeholder="Your Authorize.Net API Login ID" disabled>
+                                    </div>
+                                    <div class="col-xl-6">
+                                        <label for="authorize_net_transaction_key" class="form-label text-muted">Transaction Key</label>
                                         <div class="input-group">
-                                            <input type="password" class="form-control @error('authorize_net_transaction_key') is-invalid @enderror" id="authorize_net_transaction_key" name="authorize_net_transaction_key" value="{{ old('authorize_net_transaction_key', $settings['authorize_net_transaction_key'] ?? '') }}" placeholder="Your Authorize.Net Transaction Key">
-                                            <button class="btn btn-light" type="button" id="toggle_authorize_key">
-                                                <i class="ri-eye-line" id="authorize_key_icon"></i>
+                                            <input type="password" class="form-control" id="authorize_net_transaction_key" name="authorize_net_transaction_key" placeholder="Your Authorize.Net Transaction Key" disabled>
+                                            <button class="btn btn-light" type="button" disabled>
+                                                <i class="ri-eye-line"></i>
                                             </button>
                                         </div>
-                                        @error('authorize_net_transaction_key')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
-                                        <span class="d-block fs-12 text-muted mt-1">Leave blank to keep current key</span>
                                     </div>
                                     <div class="col-xl-6">
-                                        <label for="authorize_net_mode" class="form-label">Mode</label>
-                                        <select class="form-control @error('authorize_net_mode') is-invalid @enderror" id="authorize_net_mode" name="authorize_net_mode" data-trigger>
-                                            <option value="sandbox" {{ old('authorize_net_mode', $settings['authorize_net_mode'] ?? 'sandbox') == 'sandbox' ? 'selected' : '' }}>Sandbox</option>
-                                            <option value="live" {{ old('authorize_net_mode', $settings['authorize_net_mode'] ?? '') == 'live' ? 'selected' : '' }}>Live</option>
+                                        <label for="authorize_net_mode" class="form-label text-muted">Mode</label>
+                                        <select class="form-control" id="authorize_net_mode" name="authorize_net_mode" disabled>
+                                            <option value="sandbox">Sandbox</option>
+                                            <option value="live">Live</option>
                                         </select>
-                                        @error('authorize_net_mode')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
                                     </div>
                                 </div>
                             </div>
 
                             <!-- Mollie Tab -->
                             <div class="tab-pane fade" id="mollie-tab" role="tabpanel">
+                                <div class="alert alert-info mb-3">
+                                    <i class="ri-information-line me-2"></i>
+                                    <strong>Coming Soon!</strong> Mollie payment gateway integration is currently under development and will be available soon.
+                                </div>
                                 <div class="row gy-3">
-                                    <div class="col-xl-6">
-                                        <label for="mollie_api_key" class="form-label">API Key</label>
-                                        <div class="input-group">
-                                            <input type="password" class="form-control @error('mollie_api_key') is-invalid @enderror" id="mollie_api_key" name="mollie_api_key" value="{{ old('mollie_api_key', $settings['mollie_api_key'] ?? '') }}" placeholder="test_... or live_...">
-                                            <button class="btn btn-light" type="button" id="toggle_mollie_key">
-                                                <i class="ri-eye-line" id="mollie_key_icon"></i>
-                                            </button>
+                                    <div class="col-xl-12">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="mollie_enabled" name="mollie_enabled" value="1" disabled>
+                                            <label class="form-check-label fw-semibold text-muted" for="mollie_enabled">Enable Mollie</label>
                                         </div>
-                                        @error('mollie_api_key')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
-                                        <span class="d-block fs-12 text-muted mt-1">Leave blank to keep current key</span>
+                                        <span class="d-block fs-12 text-muted mt-1">This feature is coming soon</span>
                                     </div>
                                     <div class="col-xl-6">
-                                        <label for="mollie_mode" class="form-label">Mode</label>
-                                        <select class="form-control @error('mollie_mode') is-invalid @enderror" id="mollie_mode" name="mollie_mode" data-trigger>
-                                            <option value="sandbox" {{ old('mollie_mode', $settings['mollie_mode'] ?? 'sandbox') == 'sandbox' ? 'selected' : '' }}>Sandbox</option>
-                                            <option value="live" {{ old('mollie_mode', $settings['mollie_mode'] ?? '') == 'live' ? 'selected' : '' }}>Live</option>
+                                        <label for="mollie_api_key" class="form-label text-muted">API Key</label>
+                                        <div class="input-group">
+                                            <input type="password" class="form-control" id="mollie_api_key" name="mollie_api_key" placeholder="test_... or live_..." disabled>
+                                            <button class="btn btn-light" type="button" disabled>
+                                                <i class="ri-eye-line"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="col-xl-6">
+                                        <label for="mollie_mode" class="form-label text-muted">Mode</label>
+                                        <select class="form-control" id="mollie_mode" name="mollie_mode" disabled>
+                                            <option value="sandbox">Sandbox</option>
+                                            <option value="live">Live</option>
                                         </select>
-                                        @error('mollie_mode')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
                                     </div>
                                 </div>
                             </div>

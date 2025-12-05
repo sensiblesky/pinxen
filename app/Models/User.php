@@ -27,6 +27,7 @@ class User extends Authenticatable
         'phone',
         'language_id',
         'timezone_id',
+        'subscription_plan_id',
         'notify_in_app',
         'notify_email',
         'notify_push',
@@ -114,6 +115,32 @@ class User extends Authenticatable
     public function loginActivities()
     {
         return $this->hasMany(LoginActivity::class);
+    }
+
+    /**
+     * Get the subscription plan for the user.
+     */
+    public function subscriptionPlan()
+    {
+        return $this->belongsTo(SubscriptionPlan::class);
+    }
+
+    /**
+     * Get the user subscriptions.
+     */
+    public function subscriptions()
+    {
+        return $this->hasMany(UserSubscription::class);
+    }
+
+    /**
+     * Get the active subscription.
+     */
+    public function activeSubscription()
+    {
+        return $this->hasOne(UserSubscription::class)->where('status', 'active')
+            ->where('ends_at', '>', now())
+            ->latest();
     }
 
     /**

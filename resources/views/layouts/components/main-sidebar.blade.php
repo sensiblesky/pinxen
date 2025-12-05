@@ -29,8 +29,13 @@
 									
 									// Check if any specific menu item is active
 									$hasActiveMenu = request()->is('dashboard') || 
+													 request()->is('subscriptions*') ||
 													 (request()->is('panel') && !request()->is('panel/*')) ||
 													 request()->is('panel/users*') ||
+													 request()->is('panel/subscription-plans*') ||
+													 request()->is('panel/plan-features*') ||
+													 request()->is('panel/subscribers*') ||
+													 request()->is('panel/reports*') ||
 													 request()->is('panel/system-configuration*') ||
 													 request()->is('panel/comm-channels*') ||
 													 request()->is('panel/payment-gateway*') ||
@@ -74,6 +79,7 @@
 										</ul>
 									</li>
 									<!-- End::slide - Client Dashboards -->
+
 								@endif
 
 								<!-- Start::slide__category - Admin Panel (Visible Only to Admins) -->
@@ -108,6 +114,82 @@
 										</ul>
 									</li>
 									<!-- End::slide - Admin Dashboards -->
+
+									<!-- Start::slide__category -->
+									<li class="slide__category"><span class="category-name">Subscription</span></li>
+									<!-- End::slide__category -->
+
+									<!-- Start::slide - Subscription Management -->
+									@php
+										$isSubscriptionActive = request()->is('panel/subscription-plans*') || 
+																request()->is('panel/plan-features*') ||
+																request()->is('panel/subscribers*');
+									@endphp
+									<li class="slide has-sub {{ $isSubscriptionActive ? 'active open' : '' }}">
+										<a href="javascript:void(0);" class="side-menu__item">
+											<svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Z" opacity="0.2"/><path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><path d="M128,80a48,48,0,0,1,48,48" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><path d="M128,80a48,48,0,0,0-48,48" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><path d="M176,128a48,48,0,0,1-48,48" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><path d="M80,128a48,48,0,0,1,48,48" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg>
+											<span class="side-menu__label">Subscription</span>
+											<i class="ri-arrow-right-s-line side-menu__angle"></i>
+										</a>
+										<ul class="slide-menu child1">
+											<li class="slide side-menu__label1">
+												<a href="javascript:void(0)">Subscription</a>
+											</li>
+											<li class="slide {{ request()->is('panel/subscription-plans*') ? 'active' : '' }}">
+												<a href="{{ route('panel.subscription-plans.index') }}" class="side-menu__item">
+													<svg xmlns="http://www.w3.org/2000/svg" class="side-menu-doublemenu__icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Z" opacity="0.2"/><path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><path d="M128,80a48,48,0,0,1,48,48" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><path d="M128,80a48,48,0,0,0-48,48" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><path d="M176,128a48,48,0,0,1-48,48" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><path d="M80,128a48,48,0,0,1,48,48" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg>
+													Plans
+												</a>
+											</li>
+											<li class="slide {{ request()->is('panel/plan-features*') ? 'active' : '' }}">
+												<a href="{{ route('panel.plan-features.index') }}" class="side-menu__item">
+													<svg xmlns="http://www.w3.org/2000/svg" class="side-menu-doublemenu__icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Z" opacity="0.2"/><path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><polyline points="128 72 128 128 184 128" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg>
+													Features
+												</a>
+											</li>
+											<li class="slide {{ request()->is('panel/subscribers*') ? 'active' : '' }}">
+												<a href="{{ route('panel.subscribers.index') }}" class="side-menu__item">
+													<svg xmlns="http://www.w3.org/2000/svg" class="side-menu-doublemenu__icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><circle cx="128" cy="96" r="64" opacity="0.2"/><circle cx="128" cy="96" r="64" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><path d="M32,216c0-48.6,37.4-88,83.3-88h25.4c45.9,0,83.3,39.4,83.3,88" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg>
+													Subscribers
+												</a>
+											</li>
+										</ul>
+									</li>
+									<!-- End::slide - Subscription Management -->
+
+									<!-- Start::slide__category - Reports -->
+									<li class="slide__category"><span class="category-name">Reports</span></li>
+									<!-- End::slide__category -->
+
+									<!-- Start::slide - Reports -->
+									@php
+										$isReportsActive = request()->is('panel/reports*');
+									@endphp
+									<li class="slide has-sub {{ $isReportsActive ? 'active open' : '' }}">
+										<a href="javascript:void(0);" class="side-menu__item">
+											<svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><path d="M48,48H208a8,8,0,0,1,8,8V200a8,8,0,0,1-8,8H48a8,8,0,0,1-8-8V56A8,8,0,0,1,48,48Z" opacity="0.2"/><path d="M48,48H208a8,8,0,0,1,8,8V200a8,8,0,0,1-8,8H48a8,8,0,0,1-8-8V56A8,8,0,0,1,48,48Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="88" y1="88" x2="168" y2="88" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="88" y1="128" x2="168" y2="128" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="88" y1="168" x2="136" y2="168" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg>
+											<span class="side-menu__label">Reports</span>
+											<i class="ri-arrow-right-s-line side-menu__angle"></i>
+										</a>
+										<ul class="slide-menu child1">
+											<li class="slide side-menu__label1">
+												<a href="javascript:void(0)">Reports</a>
+											</li>
+											<li class="slide {{ request()->is('panel/reports/subscriptions*') ? 'active' : '' }}">
+												<a href="{{ route('panel.reports.subscriptions') }}" class="side-menu__item">
+													<svg xmlns="http://www.w3.org/2000/svg" class="side-menu-doublemenu__icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Z" opacity="0.2"/><path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><path d="M128,80a48,48,0,0,1,48,48" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><path d="M128,80a48,48,0,0,0-48,48" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><path d="M176,128a48,48,0,0,1-48,48" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><path d="M80,128a48,48,0,0,1,48,48" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg>
+													Subscription
+												</a>
+											</li>
+											<li class="slide {{ request()->is('panel/reports/users*') ? 'active' : '' }}">
+												<a href="{{ route('panel.reports.users') }}" class="side-menu__item">
+													<svg xmlns="http://www.w3.org/2000/svg" class="side-menu-doublemenu__icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><circle cx="128" cy="96" r="64" opacity="0.2"/><path d="M32,216c0-48.6,39.4-88,88-88s88,39.4,88,88" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><circle cx="128" cy="96" r="64" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg>
+													Users
+												</a>
+											</li>
+										</ul>
+									</li>
+									<!-- End::slide - Reports -->
 
 									<!-- Start::slide__category -->
 									<li class="slide__category"><span class="category-name">System Configuration</span></li>
@@ -253,7 +335,8 @@
 							@php
 								$isAccountSettingsActive = request()->is('profile*') || 
 															request()->is('account/security/password*') || 
-															request()->is('account/security/two-factor*');
+															request()->is('account/security/two-factor*') ||
+															request()->is('subscriptions*');
 							@endphp
 							<li class="slide has-sub {{ $isAccountSettingsActive ? 'active open' : '' }}">
 								<a href="javascript:void(0);" class="side-menu__item">
