@@ -366,6 +366,20 @@
 											2FA
 										</a>
 									</li>
+									@if(auth()->user()->role == 2)
+									<li class="slide {{ request()->is('subscriptions') && !request()->is('subscriptions/*') ? 'active' : '' }}">
+										<a href="{{ route('subscriptions.index') }}" class="side-menu__item">
+											<svg xmlns="http://www.w3.org/2000/svg" class="side-menu-doublemenu__icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><path d="M56,48H200a8,8,0,0,1,8,8V200a8,8,0,0,1-8,8H56a8,8,0,0,1-8-8V56A8,8,0,0,1,56,48Z" opacity="0.2"/><rect x="32" y="48" width="192" height="160" rx="8" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="32" y1="96" x2="224" y2="96" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="32" y1="160" x2="224" y2="160" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg>
+											Pricing Plans
+										</a>
+									</li>
+									<li class="slide {{ request()->is('subscriptions/my-subscription') ? 'active' : '' }}">
+										<a href="{{ route('subscriptions.show') }}" class="side-menu__item">
+											<svg xmlns="http://www.w3.org/2000/svg" class="side-menu-doublemenu__icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><path d="M56,48H200a8,8,0,0,1,8,8V200a8,8,0,0,1-8,8H56a8,8,0,0,1-8-8V56A8,8,0,0,1,56,48Z" opacity="0.2"/><rect x="32" y="48" width="192" height="160" rx="8" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="32" y1="96" x2="224" y2="96" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="32" y1="160" x2="224" y2="160" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg>
+											My Subscription
+										</a>
+									</li>
+									@endif
 								</ul>
 							</li>
 							<!-- End::slide -->
