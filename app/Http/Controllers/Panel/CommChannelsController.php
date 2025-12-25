@@ -89,6 +89,17 @@ class CommChannelsController extends Controller
         
         Setting::set('smtp_from_address', $validated['smtp_from_address'] ?? '');
         Setting::set('smtp_from_name', $validated['smtp_from_name'] ?? '');
+        
+        // Clear SMTP configuration cache so changes take effect immediately
+        \App\Services\MailService::clearSmtpConfigCache();
+        
+        // Log SMTP settings save for debugging
+        \Illuminate\Support\Facades\Log::info('SMTP settings saved', [
+            'has_host' => !empty($validated['smtp_host']),
+            'has_username' => !empty($validated['smtp_username']),
+            'has_port' => !empty($validated['smtp_port']),
+            'port' => $validated['smtp_port'] ?? null,
+        ]);
 
         // Save SMS settings
         Setting::set('sms_provider', $validated['sms_provider'] ?? '');

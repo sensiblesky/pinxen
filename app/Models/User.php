@@ -144,6 +144,46 @@ class User extends Authenticatable
     }
 
     /**
+     * Get the monitors for the user.
+     */
+    public function monitors()
+    {
+        return $this->hasMany(Monitor::class);
+    }
+
+    /**
+     * Get the uptime monitors for the user.
+     */
+    public function uptimeMonitors()
+    {
+        return $this->hasMany(UptimeMonitor::class);
+    }
+
+    /**
+     * Get the domain monitors for the user.
+     */
+    public function domainMonitors()
+    {
+        return $this->hasMany(DomainMonitor::class);
+    }
+
+    /**
+     * Get the SSL monitors for the user.
+     */
+    public function sslMonitors()
+    {
+        return $this->hasMany(SSLMonitor::class);
+    }
+
+    /**
+     * Get the DNS monitors for the user.
+     */
+    public function dnsMonitors()
+    {
+        return $this->hasMany(DNSMonitor::class);
+    }
+
+    /**
      * Get the route key for the model.
      */
     public function getRouteKeyName()
@@ -197,16 +237,30 @@ class User extends Authenticatable
                 'email' => $this->getEmailForPasswordReset(),
             ], false));
 
-            // Use database-configured SMTP settings
-            $mailer = \App\Services\MailService::getConfiguredMailer();
-            $mailer->to($this->email)->send(new \App\Mail\PasswordReset(
+            // Format current time as HH:MM for subject
+            $currentTime = now()->format('H:i');
+            $subject = "Password Reset Request : {$currentTime}";
+
+            // Send password reset email via queue (non-blocking)
+            \App\Jobs\SendMailJob::dispatch(
+                $this->email,
+                $subject,
+                'emails.password-reset',
+                [
+                    'url' => $url,
+                    'userName' => $this->name ?? 'User',
+                    'expire' => $expire,
+                ],
+                \App\Mail\PasswordReset::class,
+                [
                 $url,
                 $this->name ?? 'User',
                 $expire
-            ));
+                ]
+            );
         } catch (\Exception $e) {
             // Log the error for debugging
-            \Log::error('Failed to send password reset email: ' . $e->getMessage(), [
+            \Log::error('Failed to queue password reset email: ' . $e->getMessage(), [
                 'user_id' => $this->id,
                 'email' => $this->email,
                 'error' => $e->getMessage(),

@@ -42,6 +42,18 @@ Route::middleware(['auth', 'force.email.verification', 'force.2fa', 'admin'])->g
     Route::put('panel/storage', [\App\Http\Controllers\Panel\StorageController::class, 'update'])->name('panel.storage.update');
     Route::post('panel/storage/test-connection', [\App\Http\Controllers\Panel\StorageController::class, 'testConnection'])->name('panel.storage.test-connection');
     
+    // External APIs
+    Route::resource('panel/external-apis', \App\Http\Controllers\Panel\ExternalApiController::class)
+        ->names([
+            'index' => 'panel.external-apis.index',
+            'create' => 'panel.external-apis.create',
+            'store' => 'panel.external-apis.store',
+            'show' => 'panel.external-apis.show',
+            'edit' => 'panel.external-apis.edit',
+            'update' => 'panel.external-apis.update',
+            'destroy' => 'panel.external-apis.destroy',
+        ]);
+    
     // Cache Management - Must be before resource routes to avoid conflicts
     Route::get('panel/cache-management', [\App\Http\Controllers\Panel\CacheManagementController::class, 'index'])->name('panel.cache-management.index');
     Route::post('panel/cache-management/clear-all', [\App\Http\Controllers\Panel\CacheManagementController::class, 'clearAll'])->name('panel.cache-management.clear-all');

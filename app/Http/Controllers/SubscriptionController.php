@@ -82,7 +82,7 @@ class SubscriptionController extends Controller
             ];
         }
         
-        return view('subscriptions.pricing', compact(
+        return view('shared.subscriptions.pricing', compact(
             'plans', 
             'activeSubscriptions', 
             'subscribedPlanIds',
@@ -165,7 +165,7 @@ class SubscriptionController extends Controller
             ->first();
 
         // Don't load all subscription history here - it will be loaded via AJAX with pagination
-        return view('subscriptions.show', compact('activeSubscription'));
+        return view('shared.subscriptions.show', compact('activeSubscription'));
     }
 
     /**

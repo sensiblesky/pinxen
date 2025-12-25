@@ -25,6 +25,8 @@ class DatabaseSeeder extends Seeder
         // Seed subscription plans and features
         $this->call([
             SubscriptionSeeder::class,
+            ServiceCategorySeeder::class,
+            MonitoringServiceSeeder::class,
         ]);
     }
 }

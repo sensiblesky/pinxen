@@ -1,0 +1,1 @@
+cd /Users/denicsann/Desktop/projects/pingxeno/pannel && php artisan schedule:work > storage/pids/scheduler.log 2>&1 & php artisan queue:work --queue=monitor-checks,ssl-checks,dns-checks,domain-checks,emails --tries=3 --timeout=300 --sleep=3 --max-jobs=1000 > storage/pids/queue-all.log 2>&1 & echo "All services started!"

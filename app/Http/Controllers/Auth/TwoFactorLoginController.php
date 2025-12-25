@@ -144,26 +144,56 @@ class TwoFactorLoginController extends Controller
     }
 
     /**
-     * Log login activity.
+     * Log login activity and send email alert.
      */
     private function logLoginActivity(Request $request, $user, $sessionId)
     {
         $userAgent = $request->userAgent();
         $deviceInfo = $this->parseUserAgent($userAgent);
+        $ipAddress = $request->ip();
 
-        \App\Models\LoginActivity::create([
+        // Create login activity record (location will be updated later by queue job)
+        $loginActivity = \App\Models\LoginActivity::create([
             'user_id' => $user->id,
             'session_id' => $sessionId,
-            'ip_address' => $request->ip(),
+            'ip_address' => $ipAddress,
             'user_agent' => $userAgent,
             'device_type' => $deviceInfo['device_type'],
             'browser' => $deviceInfo['browser'],
             'platform' => $deviceInfo['platform'],
-            'location' => null,
+            'location' => null, // Will be updated by queue job
             'action' => 'login',
             'logged_in_at' => now(),
             'is_active' => true,
         ]);
+
+        // Send login alert email via queue (non-blocking)
+        // IP geolocation will be fetched in the queue job to avoid blocking login
+        if ($user->email) {
+            try {
+                \App\Jobs\SendMailJob::dispatch(
+                    $user->email,
+                    '🔐 New Login Alert - ' . config('app.name'),
+                    'emails.login-alert',
+                    [],
+                    \App\Mail\LoginAlertMail::class,
+                    [
+                        $user,
+                        $ipAddress,
+                        $userAgent,
+                        $deviceInfo['device_type'],
+                        $deviceInfo['browser'],
+                        $deviceInfo['platform'],
+                        null // Location will be fetched in the job
+                    ]
+                );
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Failed to queue login alert email', [
+                    'user_id' => $user->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
     }
 
     /**

@@ -90,7 +90,7 @@ class PaymentController extends Controller
                 ->with('error', 'No payment gateways are enabled. Please contact administrator.');
         }
 
-        return view('subscriptions.payment', [
+        return view('shared.subscriptions.payment', [
             'plan' => $subscriptionPlan,
             'billingPeriod' => $billingPeriod,
             'price' => $price,
@@ -1189,7 +1189,7 @@ class PaymentController extends Controller
             }
         }
 
-        return view('subscriptions.payment-status', compact('status', 'payment', 'subscription', 'message'));
+        return view('shared.subscriptions.payment-status', compact('status', 'payment', 'subscription', 'message'));
     }
 
     /**

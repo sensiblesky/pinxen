@@ -26,7 +26,7 @@ class SecurityController extends Controller
      */
     public function showPassword(Request $request): View
     {
-        return view('account.security.password', [
+        return view('shared.account.security.password', [
             'user' => $request->user(),
         ]);
     }
@@ -64,7 +64,7 @@ class SecurityController extends Controller
             $qrCodeSvg = $this->generateQRCodeSvg($user->email, $secret);
         }
 
-        return view('account.security.two-factor', [
+        return view('shared.account.security.two-factor', [
             'user' => $user,
             'qrCodeSvg' => $qrCodeSvg,
             'secret' => $secret,

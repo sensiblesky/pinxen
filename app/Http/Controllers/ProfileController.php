@@ -36,7 +36,7 @@ class ProfileController extends Controller
             ->recent(50)
             ->get();
         
-        return view('profile.edit', [
+        return view('shared.profile.edit', [
             'user' => $user,
             'languages' => $languages,
             'timezones' => $timezones,

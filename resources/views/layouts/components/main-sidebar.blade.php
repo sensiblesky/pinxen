@@ -80,6 +80,63 @@
 									</li>
 									<!-- End::slide - Client Dashboards -->
 
+									<!-- Start::slide - Monitoring Services -->
+									@php
+										$isMonitoringActive = request()->is('uptime-monitors*') || request()->is('domain-monitors*') || request()->is('ssl-monitors*') || request()->is('dns-monitors*');
+									@endphp
+									<li class="slide has-sub {{ $isMonitoringActive ? 'active open' : '' }}">
+										<a href="javascript:void(0);" class="side-menu__item">
+											<svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><circle cx="128" cy="128" r="96" opacity="0.2"/><circle cx="128" cy="128" r="96" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><polyline points="128 72 128 128 184 128" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg>
+											<span class="side-menu__label">Monitoring</span>
+											<i class="ri-arrow-right-s-line side-menu__angle"></i>
+										</a>
+										<ul class="slide-menu child1">
+											<li class="slide side-menu__label1">
+												<a href="javascript:void(0)">Monitoring</a>
+											</li>
+											<!-- Web Monitoring Submenu -->
+											<li class="slide has-sub {{ request()->is('uptime-monitors*') || request()->is('domain-monitors*') || request()->is('ssl-monitors*') || request()->is('dns-monitors*') ? 'active open' : '' }}">
+												<a href="javascript:void(0);" class="side-menu__item">
+													<svg xmlns="http://www.w3.org/2000/svg" class="side-menu-doublemenu__icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><circle cx="128" cy="128" r="40" opacity="0.2"/><circle cx="128" cy="128" r="40" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><path d="M88,128a40,40,0,0,1,40-40,40,40,0,0,1,40,40,40,40,0,0,1-40,40,40,40,0,0,1-40-40Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><path d="M128,88a40,40,0,0,1,40,40,40,40,0,0,1-40,40,40,40,0,0,1-40-40,40,40,0,0,1,40-40Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><path d="M128,32a96,96,0,0,1,96,96,96,96,0,0,1-96,96,96,96,0,0,1-96-96,96,96,0,0,1,96-96Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg>
+													Web Monitoring
+													<i class="ri-arrow-right-s-line side-menu__angle"></i>
+												</a>
+												<ul class="slide-menu child2">
+													<li class="slide {{ request()->is('uptime-monitors*') ? 'active' : '' }}">
+														<a href="{{ route('uptime-monitors.index') }}" class="side-menu__item">
+															<i class="ri-global-line me-2"></i>Uptime
+														</a>
+													</li>
+													<li class="slide {{ request()->is('domain-monitors*') ? 'active' : '' }}">
+														<a href="{{ route('domain-monitors.index') }}" class="side-menu__item">
+															<i class="ri-calendar-close-line me-2"></i>Domain Monitor
+														</a>
+													</li>
+													<li class="slide {{ request()->is('ssl-monitors*') ? 'active' : '' }}">
+														<a href="{{ route('ssl-monitors.index') }}" class="side-menu__item">
+															<i class="ri-shield-check-line me-2"></i>SSL Monitor
+														</a>
+													</li>
+													<li class="slide {{ request()->is('dns-monitors*') ? 'active' : '' }}">
+														<a href="{{ route('dns-monitors.index') }}" class="side-menu__item">
+															<i class="ri-dns-line me-2"></i>DNS Monitor
+														</a>
+													</li>
+													<!-- Future: Other monitors will be added here -->
+												</ul>
+											</li>
+											<!-- Server Monitoring (Future) -->
+											<li class="slide">
+												<a href="javascript:void(0);" class="side-menu__item">
+													<svg xmlns="http://www.w3.org/2000/svg" class="side-menu-doublemenu__icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><rect x="32" y="48" width="192" height="160" rx="8" opacity="0.2"/><rect x="32" y="48" width="192" height="160" rx="8" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="32" y1="96" x2="224" y2="96" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="32" y1="160" x2="224" y2="160" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><circle cx="64" cy="72" r="8" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><circle cx="64" cy="136" r="8" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><circle cx="64" cy="200" r="8" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg>
+													Server Monitoring
+													<span class="badge bg-secondary-transparent text-secondary ms-auto">Coming Soon</span>
+												</a>
+											</li>
+										</ul>
+									</li>
+									<!-- End::slide - Monitoring Services -->
+
 								@endif
 
 								<!-- Start::slide__category - Admin Panel (Visible Only to Admins) -->
@@ -203,6 +260,7 @@
 																request()->is('panel/auth-sso*') || 
 																request()->is('panel/recaptcha*') || 
 																request()->is('panel/storage*') || 
+																request()->is('panel/external-apis*') || 
 																request()->is('panel/cache-management*') || 
 																request()->is('panel/faqs*');
 									@endphp
@@ -250,6 +308,12 @@
 												<a href="{{ route('panel.storage.index') }}" class="side-menu__item">
 													<svg xmlns="http://www.w3.org/2000/svg" class="side-menu-doublemenu__icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><rect x="32" y="48" width="192" height="160" rx="8" opacity="0.2"/><rect x="32" y="48" width="192" height="160" rx="8" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="32" y1="88" x2="224" y2="88" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="80" y1="48" x2="80" y2="88" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg>
 													Storage
+												</a>
+											</li>
+											<li class="slide {{ request()->is('panel/external-apis*') ? 'active' : '' }}">
+												<a href="{{ route('panel.external-apis.index') }}" class="side-menu__item">
+													<svg xmlns="http://www.w3.org/2000/svg" class="side-menu-doublemenu__icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><path d="M128,24A104,104,0,0,0,24,128a104,104,0,0,0,104,104,104,104,0,0,0,104-104A104,104,0,0,0,128,24Z" opacity="0.2"/><path d="M128,24A104,104,0,0,0,24,128a104,104,0,0,0,104,104,104,104,0,0,0,104-104A104,104,0,0,0,128,24Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><polyline points="128 72 128 128 184 128" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg>
+													External API's
 												</a>
 											</li>
 											<li class="slide {{ request()->is('panel/cache-management*') ? 'active' : '' }}">

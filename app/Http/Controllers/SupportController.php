@@ -23,6 +23,6 @@ class SupportController extends Controller
         // Get all unique categories
         $categories = $faqs->pluck('category')->unique()->values();
         
-        return view('support.index', compact('faqs', 'faqsByCategory', 'categories', 'supportEmail'));
+        return view('shared.support.index', compact('faqs', 'faqsByCategory', 'categories', 'supportEmail'));
     }
 }
