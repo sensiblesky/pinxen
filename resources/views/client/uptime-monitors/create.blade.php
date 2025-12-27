@@ -170,10 +170,269 @@
                                            id="check_ssl" name="check_ssl" value="1" 
                                            {{ old('check_ssl', true) ? 'checked' : '' }}>
                                     <label class="form-check-label" for="check_ssl">
-                                        Check SSL Certificate Validity
+                                        Enable SSL Verification
                                     </label>
                                 </div>
-                                <small class="text-muted">Verify that the SSL certificate is valid and not expired</small>
+                                <small class="text-muted d-block mt-1">
+                                    <i class="ri-information-line me-1"></i>
+                                    When enabled, the monitor will verify SSL certificates. 
+                                    <strong>Disable this option</strong> if you're monitoring sites with:
+                                    <ul class="mb-0 mt-1 ps-3">
+                                        <li>Self-signed certificates</li>
+                                        <li>Invalid or expired certificates</li>
+                                        <li>Incomplete certificate chains</li>
+                                        <li>Internal/development servers</li>
+                                    </ul>
+                                    Disabling SSL verification will allow the monitor to check if the server is up/down regardless of SSL certificate issues.
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- SSL Monitor Addon -->
+                        <div class="card custom-card mt-3 border-primary">
+                            <div class="card-header bg-primary-transparent">
+                                <div class="card-title">
+                                    <i class="ri-shield-check-line me-2"></i>SSL Monitor (Optional Addon)
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" 
+                                           id="create_ssl_monitor" name="create_ssl_monitor" value="1" 
+                                           {{ old('create_ssl_monitor') ? 'checked' : '' }}
+                                           onclick="document.getElementById('ssl_monitor_options').style.display = this.checked ? 'block' : 'none';">
+                                    <label class="form-check-label" for="create_ssl_monitor" 
+                                           onclick="setTimeout(function(){ var cb = document.getElementById('create_ssl_monitor'); var opt = document.getElementById('ssl_monitor_options'); if(cb && opt) opt.style.display = cb.checked ? 'block' : 'none'; }, 10);">
+                                        <strong>Also create SSL monitor for this domain</strong>
+                                    </label>
+                                </div>
+                                <small class="text-muted d-block mb-3">
+                                    <i class="ri-information-line me-1"></i>
+                                    Enable this to automatically create an SSL certificate monitor for the domain. 
+                                    The SSL monitor will track certificate expiration and validity, and you can manage it separately in the SSL Monitors section.
+                                </small>
+
+                                <div id="ssl_monitor_options" style="display: none;">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="ssl_check_interval" class="form-label">SSL Check Interval (minutes)</label>
+                                            <input type="number" class="form-control @error('ssl_check_interval') is-invalid @enderror" 
+                                                   id="ssl_check_interval" name="ssl_check_interval" 
+                                                   value="{{ old('ssl_check_interval', 60) }}" 
+                                                   min="1" max="1440">
+                                            @error('ssl_check_interval')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                            <small class="text-muted">How often to check SSL certificate (default: 60 minutes)</small>
+                                        </div>
+
+                                        <div class="col-md-12 mb-3">
+                                            <label class="form-label">SSL Alert Settings</label>
+                                            <div class="card border">
+                                                <div class="card-body">
+                                                    <div class="form-check form-switch mb-3">
+                                                        <input class="form-check-input" type="checkbox" 
+                                                               id="ssl_alert_expiring_soon" name="ssl_alert_expiring_soon" value="1" 
+                                                               {{ old('ssl_alert_expiring_soon', true) ? 'checked' : '' }}>
+                                                        <label class="form-check-label" for="ssl_alert_expiring_soon">
+                                                            <strong>Alert when expiring soon (30 days or less)</strong>
+                                                        </label>
+                                                    </div>
+
+                                                    <div class="form-check form-switch mb-3">
+                                                        <input class="form-check-input" type="checkbox" 
+                                                               id="ssl_alert_expired" name="ssl_alert_expired" value="1" 
+                                                               {{ old('ssl_alert_expired', true) ? 'checked' : '' }}>
+                                                        <label class="form-check-label" for="ssl_alert_expired">
+                                                            <strong>Alert when certificate expires</strong>
+                                                        </label>
+                                                    </div>
+
+                                                    <div class="form-check form-switch">
+                                                        <input class="form-check-input" type="checkbox" 
+                                                               id="ssl_alert_invalid" name="ssl_alert_invalid" value="1" 
+                                                               {{ old('ssl_alert_invalid', true) ? 'checked' : '' }}>
+                                                        <label class="form-check-label" for="ssl_alert_invalid">
+                                                            <strong>Alert when certificate is invalid</strong>
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-12 mb-3">
+                                            <label class="form-label">SSL Communication Channels</label>
+                                            <div class="card border">
+                                                <div class="card-body">
+                                                    <p class="text-muted mb-3">Select how you want to receive SSL alerts:</p>
+                                                    <div class="form-check mb-2">
+                                                        <input class="form-check-input" type="checkbox" 
+                                                               id="ssl_channel_email" name="ssl_communication_channels[]" value="email" 
+                                                               {{ in_array('email', old('ssl_communication_channels', ['email'])) ? 'checked' : '' }}>
+                                                        <label class="form-check-label" for="ssl_channel_email">
+                                                            <i class="ri-mail-line me-1"></i>Email
+                                                        </label>
+                                                    </div>
+                                                    <div class="form-check mb-2">
+                                                        <input class="form-check-input" type="checkbox" 
+                                                               id="ssl_channel_sms" name="ssl_communication_channels[]" value="sms" 
+                                                               {{ in_array('sms', old('ssl_communication_channels', [])) ? 'checked' : '' }}>
+                                                        <label class="form-check-label" for="ssl_channel_sms">
+                                                            <i class="ri-message-3-line me-1"></i>SMS
+                                                        </label>
+                                                    </div>
+                                                    <div class="form-check mb-2">
+                                                        <input class="form-check-input" type="checkbox" 
+                                                               id="ssl_channel_whatsapp" name="ssl_communication_channels[]" value="whatsapp" 
+                                                               {{ in_array('whatsapp', old('ssl_communication_channels', [])) ? 'checked' : '' }}>
+                                                        <label class="form-check-label" for="ssl_channel_whatsapp">
+                                                            <i class="ri-whatsapp-line me-1"></i>WhatsApp
+                                                        </label>
+                                                    </div>
+                                                    <div class="form-check mb-2">
+                                                        <input class="form-check-input" type="checkbox" 
+                                                               id="ssl_channel_telegram" name="ssl_communication_channels[]" value="telegram" 
+                                                               {{ in_array('telegram', old('ssl_communication_channels', [])) ? 'checked' : '' }}>
+                                                        <label class="form-check-label" for="ssl_channel_telegram">
+                                                            <i class="ri-telegram-line me-1"></i>Telegram
+                                                        </label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" 
+                                                               id="ssl_channel_discord" name="ssl_communication_channels[]" value="discord" 
+                                                               {{ in_array('discord', old('ssl_communication_channels', [])) ? 'checked' : '' }}>
+                                                        <label class="form-check-label" for="ssl_channel_discord">
+                                                            <i class="ri-discord-line me-1"></i>Discord
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            @error('ssl_communication_channels')
+                                                <div class="text-danger small">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Domain Monitor Addon -->
+                        <div class="card custom-card mt-3 border-success">
+                            <div class="card-header bg-success-transparent">
+                                <div class="card-title">
+                                    <i class="ri-global-line me-2"></i>Domain Monitor (Optional Addon)
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" 
+                                           id="create_domain_monitor" name="create_domain_monitor" value="1" 
+                                           {{ old('create_domain_monitor') ? 'checked' : '' }}
+                                           onclick="document.getElementById('domain_monitor_options').style.display = this.checked ? 'block' : 'none';">
+                                    <label class="form-check-label" for="create_domain_monitor"
+                                           onclick="setTimeout(function(){ var cb = document.getElementById('create_domain_monitor'); var opt = document.getElementById('domain_monitor_options'); if(cb && opt) opt.style.display = cb.checked ? 'block' : 'none'; }, 10);">
+                                        <strong>Also create domain expiration monitor for this domain</strong>
+                                    </label>
+                                </div>
+                                <small class="text-muted d-block mb-3">
+                                    <i class="ri-information-line me-1"></i>
+                                    Enable this to automatically create a domain expiration monitor for the domain. 
+                                    The domain monitor will track expiration dates and send alerts before the domain expires. 
+                                    You can manage it separately in the Domain Monitors section.
+                                </small>
+
+                                <div id="domain_monitor_options" style="display: none;">
+                                    <div class="row">
+                                        <div class="col-md-12 mb-3">
+                                            <label class="form-label">Domain Alert Settings</label>
+                                            <div class="card border">
+                                                <div class="card-body">
+                                                    <div class="form-check form-switch mb-3">
+                                                        <input class="form-check-input" type="checkbox" 
+                                                               id="domain_alert_30_days" name="domain_alert_30_days" value="1" 
+                                                               {{ old('domain_alert_30_days', true) ? 'checked' : '' }}>
+                                                        <label class="form-check-label" for="domain_alert_30_days">
+                                                            <strong>Alert 30 days before expiration</strong>
+                                                        </label>
+                                                        <small class="d-block text-muted">Receive an alert when the domain is 30 days away from expiring</small>
+                                                    </div>
+
+                                                    <div class="form-check form-switch mb-3">
+                                                        <input class="form-check-input" type="checkbox" 
+                                                               id="domain_alert_5_days" name="domain_alert_5_days" value="1" 
+                                                               {{ old('domain_alert_5_days', true) ? 'checked' : '' }}>
+                                                        <label class="form-check-label" for="domain_alert_5_days">
+                                                            <strong>Alert 5 days before expiration</strong>
+                                                        </label>
+                                                        <small class="d-block text-muted">Receive an alert when the domain is 5 days away from expiring</small>
+                                                    </div>
+
+                                                    <div class="form-check form-switch">
+                                                        <input class="form-check-input" type="checkbox" 
+                                                               id="domain_alert_daily_under_30" name="domain_alert_daily_under_30" value="1" 
+                                                               {{ old('domain_alert_daily_under_30', true) ? 'checked' : '' }}>
+                                                        <label class="form-check-label" for="domain_alert_daily_under_30">
+                                                            <strong>Daily alerts when 30 days or less remain</strong>
+                                                        </label>
+                                                        <small class="d-block text-muted">Receive daily alerts when the domain has 30 days or less until expiration</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-12 mb-3">
+                                            <label class="form-label">Domain Communication Channels</label>
+                                            <div class="card border">
+                                                <div class="card-body">
+                                                    <p class="text-muted mb-3">Select how you want to receive domain alerts:</p>
+                                                    <div class="form-check mb-2">
+                                                        <input class="form-check-input" type="checkbox" 
+                                                               id="domain_channel_email" name="domain_communication_channels[]" value="email" 
+                                                               {{ in_array('email', old('domain_communication_channels', ['email'])) ? 'checked' : '' }}>
+                                                        <label class="form-check-label" for="domain_channel_email">
+                                                            <i class="ri-mail-line me-1"></i>Email
+                                                        </label>
+                                                    </div>
+                                                    <div class="form-check mb-2">
+                                                        <input class="form-check-input" type="checkbox" 
+                                                               id="domain_channel_sms" name="domain_communication_channels[]" value="sms" 
+                                                               {{ in_array('sms', old('domain_communication_channels', [])) ? 'checked' : '' }}>
+                                                        <label class="form-check-label" for="domain_channel_sms">
+                                                            <i class="ri-message-3-line me-1"></i>SMS
+                                                        </label>
+                                                    </div>
+                                                    <div class="form-check mb-2">
+                                                        <input class="form-check-input" type="checkbox" 
+                                                               id="domain_channel_whatsapp" name="domain_communication_channels[]" value="whatsapp" 
+                                                               {{ in_array('whatsapp', old('domain_communication_channels', [])) ? 'checked' : '' }}>
+                                                        <label class="form-check-label" for="domain_channel_whatsapp">
+                                                            <i class="ri-whatsapp-line me-1"></i>WhatsApp
+                                                        </label>
+                                                    </div>
+                                                    <div class="form-check mb-2">
+                                                        <input class="form-check-input" type="checkbox" 
+                                                               id="domain_channel_telegram" name="domain_communication_channels[]" value="telegram" 
+                                                               {{ in_array('telegram', old('domain_communication_channels', [])) ? 'checked' : '' }}>
+                                                        <label class="form-check-label" for="domain_channel_telegram">
+                                                            <i class="ri-telegram-line me-1"></i>Telegram
+                                                        </label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" 
+                                                               id="domain_channel_discord" name="domain_communication_channels[]" value="discord" 
+                                                               {{ in_array('discord', old('domain_communication_channels', [])) ? 'checked' : '' }}>
+                                                        <label class="form-check-label" for="domain_channel_discord">
+                                                            <i class="ri-discord-line me-1"></i>Discord
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            @error('domain_communication_channels')
+                                                <div class="text-danger small">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -290,7 +549,79 @@
                         </div>
                         <!-- End Advanced Options -->
 
-                        <div class="d-flex justify-content-end gap-2">
+                        <!-- Confirmation Logic (False-Positive Prevention) -->
+                        <div class="row mt-4">
+                            <div class="col-md-12">
+                                <div class="card border">
+                                    <div class="card-header bg-light">
+                                        <div class="card-title mb-0">
+                                            <i class="ri-shield-check-line me-2 text-primary"></i>Confirmation Logic (False-Positive Prevention)
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" 
+                                                       id="confirmation_enabled" name="confirmation_enabled" value="1" 
+                                                       {{ old('confirmation_enabled') ? 'checked' : '' }}>
+                                                <label class="form-check-label" for="confirmation_enabled">
+                                                    <strong>Enable Multi-Probe Confirmation</strong>
+                                                </label>
+                                            </div>
+                                            <small class="text-muted d-block mt-1">
+                                                Before declaring DOWN, system will recheck from multiple probes with retry logic. 
+                                                Only declares incident when X out of Y probes fail. This prevents false positives.
+                                            </small>
+                                        </div>
+
+                                        <div id="confirmation_settings" style="display: {{ old('confirmation_enabled') ? 'block' : 'none' }};">
+                                            <div class="row">
+                                                <div class="col-md-6 mb-3">
+                                                    <label for="confirmation_probes" class="form-label">Number of Probes</label>
+                                                    <input type="number" class="form-control" 
+                                                           id="confirmation_probes" name="confirmation_probes" 
+                                                           value="{{ old('confirmation_probes', 3) }}" 
+                                                           min="2" max="10">
+                                                    <small class="text-muted">Total number of probes to use (2-10)</small>
+                                                </div>
+                                                <div class="col-md-6 mb-3">
+                                                    <label for="confirmation_threshold" class="form-label">Failure Threshold</label>
+                                                    <input type="number" class="form-control" 
+                                                           id="confirmation_threshold" name="confirmation_threshold" 
+                                                           value="{{ old('confirmation_threshold', 2) }}" 
+                                                           min="1" max="10">
+                                                    <small class="text-muted">X out of Y probes must fail to confirm DOWN (e.g., 2 out of 3)</small>
+                                                </div>
+                                                <div class="col-md-6 mb-3">
+                                                    <label for="confirmation_retry_delay" class="form-label">Retry Delay (seconds)</label>
+                                                    <input type="number" class="form-control" 
+                                                           id="confirmation_retry_delay" name="confirmation_retry_delay" 
+                                                           value="{{ old('confirmation_retry_delay', 5) }}" 
+                                                           min="1" max="60">
+                                                    <small class="text-muted">Delay between probe retries (1-60 seconds)</small>
+                                                </div>
+                                                <div class="col-md-6 mb-3">
+                                                    <label for="confirmation_max_retries" class="form-label">Max Retries</label>
+                                                    <input type="number" class="form-control" 
+                                                           id="confirmation_max_retries" name="confirmation_max_retries" 
+                                                           value="{{ old('confirmation_max_retries', 3) }}" 
+                                                           min="1" max="10">
+                                                    <small class="text-muted">Maximum retry attempts per probe (1-10)</small>
+                                                </div>
+                                            </div>
+                                            <div class="alert alert-info">
+                                                <i class="ri-information-line me-2"></i>
+                                                <strong>How it works:</strong> When enabled, the system performs multiple checks from different perspectives (simulated different regions/ISPs) with exponential backoff. 
+                                                Only when the failure threshold is met (e.g., 2 out of 3 probes fail) will the monitor be marked as DOWN and alerts sent.
+                                                This significantly reduces false positives from temporary network issues.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 mt-4">
                             <a href="{{ route('uptime-monitors.index') }}" class="btn btn-light btn-wave">
                                 <i class="ri-close-line me-1"></i>Cancel
                             </a>
@@ -354,8 +685,130 @@
                 statusCodeSelect.disabled = true;
             }
         });
-    });
-</script>
+
+        // Toggle Confirmation settings visibility
+        (function() {
+            const confirmationCheckbox = document.getElementById('confirmation_enabled');
+            const confirmationSettings = document.getElementById('confirmation_settings');
+            
+            if (confirmationCheckbox && confirmationSettings) {
+                function toggleConfirmation() {
+                    confirmationSettings.style.display = confirmationCheckbox.checked ? 'block' : 'none';
+                    // Make fields required/optional based on checkbox
+                    const requiredFields = confirmationSettings.querySelectorAll('input[type="number"]');
+                    requiredFields.forEach(field => {
+                        field.required = confirmationCheckbox.checked;
+                    });
+                }
+                
+                confirmationCheckbox.addEventListener('change', toggleConfirmation);
+                toggleConfirmation(); // Set initial state
+            }
+        })();
+
+        // Toggle SSL monitor options visibility
+        (function() {
+            const sslCheckbox = document.getElementById('create_ssl_monitor');
+            const sslOptions = document.getElementById('ssl_monitor_options');
+            
+            if (!sslCheckbox || !sslOptions) {
+                console.error('SSL Monitor elements not found');
+                return;
+            }
+            
+            // Set initial state
+            sslOptions.style.display = sslCheckbox.checked ? 'block' : 'none';
+            
+            // Toggle function
+            function toggleSsl() {
+                const checkbox = document.getElementById('create_ssl_monitor');
+                const options = document.getElementById('ssl_monitor_options');
+                if (checkbox && options) {
+                    options.style.display = checkbox.checked ? 'block' : 'none';
+                }
+            }
+            
+            // Use input event which fires immediately
+            sslCheckbox.addEventListener('input', toggleSsl);
+            sslCheckbox.addEventListener('change', toggleSsl);
+            sslCheckbox.addEventListener('click', function() {
+                setTimeout(toggleSsl, 0);
+            });
+            
+            // Handle parent form-switch div clicks
+            const sslSwitch = sslCheckbox.closest('.form-check');
+            if (sslSwitch) {
+                sslSwitch.addEventListener('click', function(e) {
+                    if (e.target !== sslCheckbox && e.target.tagName !== 'LABEL') {
+                        setTimeout(toggleSsl, 0);
+                    }
+                });
+            }
+        })();
+        
+        // Toggle Domain monitor options visibility
+        (function() {
+            const domainCheckbox = document.getElementById('create_domain_monitor');
+            const domainOptions = document.getElementById('domain_monitor_options');
+            
+            if (!domainCheckbox || !domainOptions) {
+                console.error('Domain Monitor elements not found');
+                return;
+            }
+            
+            // Set initial state
+            domainOptions.style.display = domainCheckbox.checked ? 'block' : 'none';
+            
+            // Toggle function
+            function toggleDomain() {
+                const checkbox = document.getElementById('create_domain_monitor');
+                const options = document.getElementById('domain_monitor_options');
+                if (checkbox && options) {
+                    options.style.display = checkbox.checked ? 'block' : 'none';
+                }
+            }
+            
+            // Use input event which fires immediately
+            domainCheckbox.addEventListener('input', toggleDomain);
+            domainCheckbox.addEventListener('change', toggleDomain);
+            domainCheckbox.addEventListener('click', function() {
+                setTimeout(toggleDomain, 0);
+            });
+            
+            // Handle parent form-switch div clicks
+            const domainSwitch = domainCheckbox.closest('.form-check');
+            if (domainSwitch) {
+                domainSwitch.addEventListener('click', function(e) {
+                    if (e.target !== domainCheckbox && e.target.tagName !== 'LABEL') {
+                        setTimeout(toggleDomain, 0);
+                    }
+                });
+            }
+        })();
+
+        // Validate SSL and Domain communication channels if monitors are enabled
+        document.getElementById('monitor-form').addEventListener('submit', function(e) {
+            const createSslMonitor = document.getElementById('create_ssl_monitor');
+            if (createSslMonitor && createSslMonitor.checked) {
+                const sslChannels = document.querySelectorAll('input[name="ssl_communication_channels[]"]:checked');
+                if (sslChannels.length === 0) {
+                    e.preventDefault();
+                    alert('Please select at least one SSL communication channel.');
+                    return false;
+                }
+            }
+
+            const createDomainMonitor = document.getElementById('create_domain_monitor');
+            if (createDomainMonitor && createDomainMonitor.checked) {
+                const domainChannels = document.querySelectorAll('input[name="domain_communication_channels[]"]:checked');
+                if (domainChannels.length === 0) {
+                    e.preventDefault();
+                    alert('Please select at least one domain communication channel.');
+                    return false;
+                }
+            }
+        });
+    </script>
 @endsection
 
 

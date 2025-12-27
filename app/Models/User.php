@@ -184,6 +184,30 @@ class User extends Authenticatable
     }
 
     /**
+     * Get the API monitors for the user.
+     */
+    public function apiMonitors()
+    {
+        return $this->hasMany(ApiMonitor::class);
+    }
+
+    /**
+     * Get the API keys for the user.
+     */
+    public function apiKeys()
+    {
+        return $this->hasMany(ApiKey::class);
+    }
+
+    /**
+     * Get the servers for the user.
+     */
+    public function servers()
+    {
+        return $this->hasMany(Server::class);
+    }
+
+    /**
      * Get the route key for the model.
      */
     public function getRouteKeyName()

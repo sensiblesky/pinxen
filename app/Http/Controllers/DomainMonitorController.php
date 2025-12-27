@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\DomainMonitor;
 use App\Models\DomainMonitorAlert;
 use App\Models\MonitorCommunicationPreference;
+use App\Models\SSLMonitor;
 use App\Jobs\DomainExpirationCheckJob;
+use App\Jobs\SSLMonitorCheckJob;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -67,6 +69,14 @@ class DomainMonitorController extends Controller
             'alert_daily_under_30' => ['nullable', 'boolean'],
             'communication_channels' => ['required', 'array', 'min:1'],
             'communication_channels.*' => ['in:email,sms,whatsapp,telegram,discord'],
+            // SSL Monitor addon fields
+            'create_ssl_monitor' => ['nullable', 'boolean'],
+            'ssl_check_interval' => ['nullable', 'integer', 'min:1', 'max:1440'],
+            'ssl_alert_expiring_soon' => ['nullable', 'boolean'],
+            'ssl_alert_expired' => ['nullable', 'boolean'],
+            'ssl_alert_invalid' => ['nullable', 'boolean'],
+            'ssl_communication_channels' => ['nullable', 'array'],
+            'ssl_communication_channels.*' => ['in:email,sms,whatsapp,telegram,discord'],
         ], [
             'communication_channels.required' => 'Please select at least one communication channel.',
             'communication_channels.min' => 'Please select at least one communication channel.',
@@ -110,8 +120,71 @@ class DomainMonitorController extends Controller
             DomainExpirationCheckJob::dispatch($monitor->id);
         }
 
+        // Create SSL monitor if requested
+        $sslMonitorCreated = false;
+        if ($request->has('create_ssl_monitor') && $request->input('create_ssl_monitor') == '1') {
+            $domain = strtolower(trim($validated['domain']));
+            
+            // Check if SSL monitor already exists for this domain
+            $existingSslMonitor = SSLMonitor::where('user_id', $user->id)
+                ->where('domain', $domain)
+                ->first();
+            
+            if (!$existingSslMonitor) {
+                // Validate SSL communication channels
+                $sslChannels = $validated['ssl_communication_channels'] ?? [];
+                if (empty($sslChannels)) {
+                    $sslChannels = ['email']; // Default to email if none selected
+                }
+                
+                $sslMonitor = SSLMonitor::create([
+                    'user_id' => $user->id,
+                    'name' => $validated['name'] . ' (SSL)',
+                    'domain' => $domain,
+                    'check_interval' => $validated['ssl_check_interval'] ?? 60,
+                    'alert_expiring_soon' => $request->has('ssl_alert_expiring_soon') && $request->input('ssl_alert_expiring_soon') == '1',
+                    'alert_expired' => $request->has('ssl_alert_expired') && $request->input('ssl_alert_expired') == '1',
+                    'alert_invalid' => $request->has('ssl_alert_invalid') && $request->input('ssl_alert_invalid') == '1',
+                    'is_active' => true,
+                    'status' => 'unknown',
+                ]);
+                
+                // Save communication preferences
+                foreach ($sslChannels as $channel) {
+                    $channelValue = match($channel) {
+                        'email' => $user->email,
+                        'sms' => $user->phone ?? $user->email,
+                        'whatsapp' => $user->phone ?? $user->email,
+                        'telegram' => $user->email,
+                        'discord' => $user->email,
+                        default => $user->email,
+                    };
+                    
+                    MonitorCommunicationPreference::create([
+                        'monitor_id' => $sslMonitor->id,
+                        'monitor_type' => 'ssl',
+                        'communication_channel' => $channel,
+                        'channel_value' => $channelValue,
+                        'is_enabled' => true,
+                    ]);
+                }
+                
+                // Dispatch SSL check job
+                if ($sslMonitor->is_active) {
+                    SSLMonitorCheckJob::dispatch($sslMonitor->id);
+                }
+                
+                $sslMonitorCreated = true;
+            }
+        }
+
+        $successMessage = 'Domain monitor created successfully.';
+        if ($sslMonitorCreated) {
+            $successMessage .= ' SSL monitor has also been created for this domain.';
+        }
+
         return redirect()->route('domain-monitors.index')
-            ->with('success', 'Domain monitor created successfully.');
+            ->with('success', $successMessage);
     }
 
     /**

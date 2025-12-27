@@ -7,6 +7,9 @@ use App\Models\DomainMonitor;
 use App\Models\SSLMonitor;
 use App\Models\UptimeMonitorCheck;
 use App\Models\UptimeMonitorAlert;
+use App\Models\MonitorCommunicationPreference;
+use App\Jobs\SSLMonitorCheckJob;
+use App\Jobs\DomainExpirationCheckJob;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -115,6 +118,27 @@ class UptimeMonitorController extends Controller
             'cache_buster' => ['nullable', 'boolean'],
             'maintenance_start_time' => ['nullable', 'date'],
             'maintenance_end_time' => ['nullable', 'date', 'after_or_equal:maintenance_start_time'],
+            // SSL Monitor addon fields
+            'create_ssl_monitor' => ['nullable', 'boolean'],
+            'ssl_check_interval' => ['nullable', 'integer', 'min:1', 'max:1440'],
+            'ssl_alert_expiring_soon' => ['nullable', 'boolean'],
+            'ssl_alert_expired' => ['nullable', 'boolean'],
+            'ssl_alert_invalid' => ['nullable', 'boolean'],
+            'ssl_communication_channels' => ['nullable', 'array'],
+            'ssl_communication_channels.*' => ['in:email,sms,whatsapp,telegram,discord'],
+            // Domain Monitor addon fields
+            'create_domain_monitor' => ['nullable', 'boolean'],
+            'domain_alert_30_days' => ['nullable', 'boolean'],
+            'domain_alert_5_days' => ['nullable', 'boolean'],
+            'domain_alert_daily_under_30' => ['nullable', 'boolean'],
+            'domain_communication_channels' => ['nullable', 'array'],
+            'domain_communication_channels.*' => ['in:email,sms,whatsapp,telegram,discord'],
+            // Confirmation logic fields
+            'confirmation_enabled' => ['nullable', 'boolean'],
+            'confirmation_probes' => ['nullable', 'integer', 'min:2', 'max:10'],
+            'confirmation_threshold' => ['nullable', 'integer', 'min:1', 'max:10'],
+            'confirmation_retry_delay' => ['nullable', 'integer', 'min:1', 'max:60'],
+            'confirmation_max_retries' => ['nullable', 'integer', 'min:1', 'max:10'],
         ]);
 
         // Handle custom status code
@@ -167,14 +191,161 @@ class UptimeMonitorController extends Controller
             'expected_status_code' => (int)$expectedStatusCode,
             'keyword_present' => $validated['keyword_present'] ?? null,
             'keyword_absent' => $validated['keyword_absent'] ?? null,
-            'check_ssl' => $validated['check_ssl'] ?? true,
+            'check_ssl' => $request->has('check_ssl') && $request->input('check_ssl') == '1',
+            'confirmation_enabled' => $request->has('confirmation_enabled') && $request->input('confirmation_enabled') == '1',
+            'confirmation_probes' => $validated['confirmation_probes'] ?? 3,
+            'confirmation_threshold' => $validated['confirmation_threshold'] ?? 2,
+            'confirmation_retry_delay' => $validated['confirmation_retry_delay'] ?? 5,
+            'confirmation_max_retries' => $validated['confirmation_max_retries'] ?? 3,
             'is_active' => true,
             'status' => 'unknown',
             'next_check_at' => now(), // Set to now() so it gets checked immediately
         ]);
 
+        // Create SSL monitor if requested
+        $sslMonitorCreated = false;
+        if ($request->has('create_ssl_monitor') && $request->input('create_ssl_monitor') == '1') {
+            // Extract domain from URL
+            $parsedUrl = parse_url($validated['url']);
+            $domain = $parsedUrl['host'] ?? null;
+            
+            if ($domain) {
+                // Remove port if present
+                $domain = preg_replace('/:\d+$/', '', $domain);
+                $domain = strtolower(trim($domain));
+                
+                // Check if SSL monitor already exists for this domain
+                $existingSslMonitor = SSLMonitor::where('user_id', $user->id)
+                    ->where('domain', $domain)
+                    ->first();
+                
+                if (!$existingSslMonitor) {
+                    // Validate SSL communication channels
+                    $sslChannels = $validated['ssl_communication_channels'] ?? [];
+                    if (empty($sslChannels)) {
+                        $sslChannels = ['email']; // Default to email if none selected
+                    }
+                    
+                    $sslMonitor = SSLMonitor::create([
+                        'user_id' => $user->id,
+                        'name' => $validated['name'] . ' (SSL)',
+                        'domain' => $domain,
+                        'check_interval' => $validated['ssl_check_interval'] ?? 60,
+                        'alert_expiring_soon' => $request->has('ssl_alert_expiring_soon') && $request->input('ssl_alert_expiring_soon') == '1',
+                        'alert_expired' => $request->has('ssl_alert_expired') && $request->input('ssl_alert_expired') == '1',
+                        'alert_invalid' => $request->has('ssl_alert_invalid') && $request->input('ssl_alert_invalid') == '1',
+                        'is_active' => true,
+                        'status' => 'unknown',
+                    ]);
+                    
+                    // Save communication preferences
+                    foreach ($sslChannels as $channel) {
+                        $channelValue = match($channel) {
+                            'email' => $user->email,
+                            'sms' => $user->phone ?? $user->email,
+                            'whatsapp' => $user->phone ?? $user->email,
+                            'telegram' => $user->email,
+                            'discord' => $user->email,
+                            default => $user->email,
+                        };
+                        
+                        MonitorCommunicationPreference::create([
+                            'monitor_id' => $sslMonitor->id,
+                            'monitor_type' => 'ssl',
+                            'communication_channel' => $channel,
+                            'channel_value' => $channelValue,
+                            'is_enabled' => true,
+                        ]);
+                    }
+                    
+                    // Dispatch SSL check job
+                    if ($sslMonitor->is_active) {
+                        SSLMonitorCheckJob::dispatch($sslMonitor->id);
+                    }
+                    
+                    $sslMonitorCreated = true;
+                }
+            }
+        }
+
+        // Create Domain monitor if requested
+        $domainMonitorCreated = false;
+        if ($request->has('create_domain_monitor') && $request->input('create_domain_monitor') == '1') {
+            // Extract domain from URL
+            $parsedUrl = parse_url($validated['url']);
+            $domain = $parsedUrl['host'] ?? null;
+            
+            if ($domain) {
+                // Remove port if present
+                $domain = preg_replace('/:\d+$/', '', $domain);
+                $domain = strtolower(trim($domain));
+                
+                // Check if Domain monitor already exists for this domain
+                $existingDomainMonitor = DomainMonitor::where('user_id', $user->id)
+                    ->where('domain', $domain)
+                    ->first();
+                
+                if (!$existingDomainMonitor) {
+                    // Validate Domain communication channels
+                    $domainChannels = $validated['domain_communication_channels'] ?? [];
+                    if (empty($domainChannels)) {
+                        $domainChannels = ['email']; // Default to email if none selected
+                    }
+                    
+                    $domainMonitor = DomainMonitor::create([
+                        'user_id' => $user->id,
+                        'name' => $validated['name'] . ' (Domain)',
+                        'domain' => $domain,
+                        'alert_30_days' => $request->has('domain_alert_30_days') && $request->input('domain_alert_30_days') == '1',
+                        'alert_5_days' => $request->has('domain_alert_5_days') && $request->input('domain_alert_5_days') == '1',
+                        'alert_daily_under_30' => $request->has('domain_alert_daily_under_30') && $request->input('domain_alert_daily_under_30') == '1',
+                        'is_active' => true,
+                    ]);
+                    
+                    // Save communication preferences
+                    foreach ($domainChannels as $channel) {
+                        $channelValue = match($channel) {
+                            'email' => $user->email,
+                            'sms' => $user->phone ?? $user->email,
+                            'whatsapp' => $user->phone ?? $user->email,
+                            'telegram' => $user->email,
+                            'discord' => $user->email,
+                            default => $user->email,
+                        };
+                        
+                        MonitorCommunicationPreference::create([
+                            'monitor_id' => $domainMonitor->id,
+                            'monitor_type' => 'domain',
+                            'communication_channel' => $channel,
+                            'channel_value' => $channelValue,
+                            'is_enabled' => true,
+                        ]);
+                    }
+                    
+                    // Dispatch Domain check job
+                    if ($domainMonitor->is_active) {
+                        DomainExpirationCheckJob::dispatch($domainMonitor->id);
+                    }
+                    
+                    $domainMonitorCreated = true;
+                }
+            }
+        }
+
+        $successMessage = 'Uptime monitor created successfully.';
+        $addons = [];
+        if ($sslMonitorCreated) {
+            $addons[] = 'SSL monitor';
+        }
+        if ($domainMonitorCreated) {
+            $addons[] = 'Domain monitor';
+        }
+        if (!empty($addons)) {
+            $successMessage .= ' ' . implode(' and ', $addons) . ' has also been created for this domain.';
+        }
+
         return redirect()->route('uptime-monitors.index')
-            ->with('success', 'Uptime monitor created successfully.');
+            ->with('success', $successMessage);
     }
 
     /**
@@ -549,6 +720,12 @@ class UptimeMonitorController extends Controller
             'cache_buster' => ['nullable', 'boolean'],
             'maintenance_start_time' => ['nullable', 'date'],
             'maintenance_end_time' => ['nullable', 'date', 'after_or_equal:maintenance_start_time'],
+            // Confirmation logic fields
+            'confirmation_enabled' => ['nullable', 'boolean'],
+            'confirmation_probes' => ['nullable', 'integer', 'min:2', 'max:10'],
+            'confirmation_threshold' => ['nullable', 'integer', 'min:1', 'max:10'],
+            'confirmation_retry_delay' => ['nullable', 'integer', 'min:1', 'max:60'],
+            'confirmation_max_retries' => ['nullable', 'integer', 'min:1', 'max:10'],
         ]);
 
         // Handle custom status code for update
@@ -594,7 +771,7 @@ class UptimeMonitorController extends Controller
             'expected_status_code' => (int)$expectedStatusCode,
             'keyword_present' => $validated['keyword_present'] ?? null,
             'keyword_absent' => $validated['keyword_absent'] ?? null,
-            'check_ssl' => $validated['check_ssl'] ?? true,
+            'check_ssl' => $request->has('check_ssl') && $request->input('check_ssl') == '1',
             'is_active' => $validated['is_active'] ?? true,
             'request_method' => $validated['request_method'] ?? 'GET',
             'basic_auth_username' => $validated['basic_auth_username'] ?? null,
@@ -759,7 +936,9 @@ class UptimeMonitorController extends Controller
             $query->where(function($q) use ($searchValue) {
                 $q->where('status', 'like', '%' . $searchValue . '%')
                   ->orWhere('status_code', 'like', '%' . $searchValue . '%')
-                  ->orWhere('error_message', 'like', '%' . $searchValue . '%');
+                  ->orWhere('error_message', 'like', '%' . $searchValue . '%')
+                  ->orWhere('failure_type', 'like', '%' . $searchValue . '%')
+                  ->orWhere('failure_classification', 'like', '%' . $searchValue . '%');
             });
         }
 
@@ -774,8 +953,9 @@ class UptimeMonitorController extends Controller
             1 => 'status',
             2 => 'response_time',
             3 => 'status_code',
-            4 => 'error_message',
-            5 => 'checked_at',
+            4 => 'layer_checks', // Layer checks column (not directly sortable)
+            5 => 'error_message',
+            6 => 'checked_at',
         ];
         
         $orderBy = $columnMap[$orderColumn] ?? 'checked_at';
@@ -797,6 +977,13 @@ class UptimeMonitorController extends Controller
                 'response_time' => $check->response_time,
                 'status_code' => $check->status_code,
                 'error_message' => $check->error_message,
+                'failure_type' => $check->failure_type,
+                'failure_classification' => $check->failure_classification,
+                'layer_checks' => $check->layer_checks,
+                'probe_results' => $check->probe_results,
+                'is_confirmed' => $check->is_confirmed,
+                'probes_failed' => $check->probes_failed,
+                'probes_total' => $check->probes_total,
                 'checked_at' => $check->checked_at->format('Y-m-d H:i:s'),
                 'checked_at_human' => $check->checked_at->diffForHumans(),
             ];

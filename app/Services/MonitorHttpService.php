@@ -120,6 +120,8 @@ class MonitorHttpService
                         CURLOPT_CONNECTTIMEOUT => $connectTimeout,
                         CURLOPT_TIMEOUT => $timeout,
                         CURLOPT_TIMEOUT_MS => $timeout * 1000, // Total timeout in milliseconds
+                        CURLOPT_SSL_VERIFYPEER => $checkSsl, // Verify peer SSL certificate
+                        CURLOPT_SSL_VERIFYHOST => $checkSsl ? 2 : 0, // Verify hostname (2 = strict, 0 = disabled)
                     ],
                 ]);
 
@@ -180,39 +182,171 @@ class MonitorHttpService
                 $errorMessage = implode('; ', $errors);
             }
 
+            // Classify failure if monitor is down
+            $failureClassification = null;
+            if (!$isUp) {
+                $failureClassification = \App\Services\FailureClassificationService::classifyFailure(
+                    $errorMessage,
+                    $statusCode,
+                    $responseTime,
+                    $url
+                );
+            }
+
             return [
                 'status' => $isUp ? 'up' : 'down',
                 'response_time' => $responseTime,
                 'status_code' => $statusCode,
                 'error_message' => $errorMessage,
+                'failure_type' => $failureClassification['type'] ?? null,
+                'failure_classification' => $failureClassification['classification'] ?? null,
+                'failure_provider' => $failureClassification['provider'] ?? null,
             ];
 
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
-            // Connection timeout or refused
+            // Connection timeout, refused, or SSL certificate error
             $responseTime = round((microtime(true) - $startTime) * 1000);
+            
+            $errorMessage = $e->getMessage();
+            
+            // Check if it's an SSL certificate error
+            if (stripos($errorMessage, 'SSL certificate') !== false || 
+                stripos($errorMessage, 'cURL error 60') !== false ||
+                stripos($errorMessage, 'certificate verify failed') !== false ||
+                stripos($errorMessage, 'unable to get local issuer certificate') !== false ||
+                stripos($errorMessage, 'certificate chain') !== false) {
+                
+                if ($checkSsl) {
+                    // Check for specific error types
+                    if (stripos($errorMessage, 'unable to get local issuer certificate') !== false) {
+                        $errorMessage = 'SSL certificate chain incomplete: The server\'s certificate is valid, but the intermediate certificate authority (CA) certificates are missing. ' .
+                            'This is a server configuration issue. You can disable SSL verification in monitor settings to bypass this check.';
+                    } elseif (stripos($errorMessage, 'self signed') !== false || stripos($errorMessage, 'self-signed') !== false) {
+                        $errorMessage = 'Self-signed SSL certificate detected. This is common for internal/development servers. ' .
+                            'You can disable SSL verification in monitor settings if this is expected.';
+                    } elseif (stripos($errorMessage, 'expired') !== false) {
+                        $errorMessage = 'SSL certificate has expired. The website needs to renew its SSL certificate.';
+                    } elseif (stripos($errorMessage, 'hostname') !== false || stripos($errorMessage, 'doesn\'t match') !== false) {
+                        $errorMessage = 'SSL certificate hostname mismatch: The certificate was issued for a different domain. ' .
+                            'This could indicate a misconfigured server or security issue.';
+                    } else {
+                        $errorMessage = 'SSL certificate verification failed. This usually means: ' .
+                            '1) The certificate is self-signed, ' .
+                            '2) The certificate has expired, ' .
+                            '3) The certificate doesn\'t match the domain, or ' .
+                            '4) The certificate chain is incomplete (missing intermediate CA certificates). ' .
+                            'You can disable SSL verification in monitor settings if this is expected.';
+                    }
+                } else {
+                    $errorMessage = 'SSL connection failed: ' . $errorMessage;
+                }
+                
+                Log::warning('SSL certificate error during monitor check', [
+                    'url' => $url,
+                    'check_ssl' => $checkSsl,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+            
+            // Classify the failure
+            $failureClassification = \App\Services\FailureClassificationService::classifyFailure(
+                'Connection failed: ' . $errorMessage,
+                null,
+                $responseTime,
+                $url
+            );
+
             return [
                 'status' => 'down',
                 'response_time' => $responseTime,
                 'status_code' => null,
-                'error_message' => 'Connection failed: ' . $e->getMessage(),
+                'error_message' => 'Connection failed: ' . $errorMessage,
+                'failure_type' => $failureClassification['type'] ?? null,
+                'failure_classification' => $failureClassification['classification'] ?? null,
+                'failure_provider' => $failureClassification['provider'] ?? null,
             ];
         } catch (\Illuminate\Http\Client\RequestException $e) {
             // Request exception
             $responseTime = round((microtime(true) - $startTime) * 1000);
+            // Classify the failure
+            $statusCode = $e->response->status() ?? null;
+            $failureClassification = \App\Services\FailureClassificationService::classifyFailure(
+                'Request failed: ' . $e->getMessage(),
+                $statusCode,
+                $responseTime,
+                $url
+            );
+
             return [
                 'status' => 'down',
                 'response_time' => $responseTime,
-                'status_code' => $e->response->status() ?? null,
+                'status_code' => $statusCode,
                 'error_message' => 'Request failed: ' . $e->getMessage(),
+                'failure_type' => $failureClassification['type'] ?? null,
+                'failure_classification' => $failureClassification['classification'] ?? null,
+                'failure_provider' => $failureClassification['provider'] ?? null,
             ];
         } catch (\Exception $e) {
-            // Any other exception
+            // Any other exception (including SSL errors that don't throw ConnectionException)
             $responseTime = round((microtime(true) - $startTime) * 1000);
+            
+            $errorMessage = $e->getMessage();
+            
+            // Check if it's an SSL certificate error
+            if (stripos($errorMessage, 'SSL certificate') !== false || 
+                stripos($errorMessage, 'cURL error 60') !== false ||
+                stripos($errorMessage, 'certificate verify failed') !== false ||
+                stripos($errorMessage, 'unable to get local issuer certificate') !== false ||
+                stripos($errorMessage, 'certificate chain') !== false) {
+                
+                if ($checkSsl) {
+                    // Check for specific error types
+                    if (stripos($errorMessage, 'unable to get local issuer certificate') !== false) {
+                        $errorMessage = 'SSL certificate chain incomplete: The server\'s certificate is valid, but the intermediate certificate authority (CA) certificates are missing. ' .
+                            'This is a server configuration issue. You can disable SSL verification in monitor settings to bypass this check.';
+                    } elseif (stripos($errorMessage, 'self signed') !== false || stripos($errorMessage, 'self-signed') !== false) {
+                        $errorMessage = 'Self-signed SSL certificate detected. This is common for internal/development servers. ' .
+                            'You can disable SSL verification in monitor settings if this is expected.';
+                    } elseif (stripos($errorMessage, 'expired') !== false) {
+                        $errorMessage = 'SSL certificate has expired. The website needs to renew its SSL certificate.';
+                    } elseif (stripos($errorMessage, 'hostname') !== false || stripos($errorMessage, 'doesn\'t match') !== false) {
+                        $errorMessage = 'SSL certificate hostname mismatch: The certificate was issued for a different domain. ' .
+                            'This could indicate a misconfigured server or security issue.';
+                    } else {
+                        $errorMessage = 'SSL certificate verification failed. This usually means: ' .
+                            '1) The certificate is self-signed, ' .
+                            '2) The certificate has expired, ' .
+                            '3) The certificate doesn\'t match the domain, or ' .
+                            '4) The certificate chain is incomplete (missing intermediate CA certificates). ' .
+                            'You can disable SSL verification in monitor settings if this is expected.';
+                    }
+                } else {
+                    $errorMessage = 'SSL connection failed: ' . $errorMessage;
+                }
+                
+                Log::warning('SSL certificate error during monitor check', [
+                    'url' => $url,
+                    'check_ssl' => $checkSsl,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+            
+            // Classify the failure
+            $failureClassification = \App\Services\FailureClassificationService::classifyFailure(
+                'Unexpected error: ' . $errorMessage,
+                null,
+                $responseTime,
+                $url
+            );
+
             return [
                 'status' => 'down',
                 'response_time' => $responseTime,
                 'status_code' => null,
-                'error_message' => 'Unexpected error: ' . $e->getMessage(),
+                'error_message' => 'Unexpected error: ' . $errorMessage,
+                'failure_type' => $failureClassification['type'] ?? null,
+                'failure_classification' => $failureClassification['classification'] ?? null,
+                'failure_provider' => $failureClassification['provider'] ?? null,
             ];
         }
     }

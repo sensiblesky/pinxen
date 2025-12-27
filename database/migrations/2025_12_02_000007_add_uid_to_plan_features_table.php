@@ -18,10 +18,12 @@ return new class extends Migration
         }
 
         // Generate UUIDs for existing records that don't have one
-        $features = \App\Models\PlanFeature::whereNull('uid')->get();
+        // Use DB facade directly to avoid SoftDeletes issue
+        $features = \DB::table('plan_features')->whereNull('uid')->get();
         foreach ($features as $feature) {
-            $feature->uid = \Illuminate\Support\Str::uuid()->toString();
-            $feature->save();
+            \DB::table('plan_features')
+                ->where('id', $feature->id)
+                ->update(['uid' => \Illuminate\Support\Str::uuid()->toString()]);
         }
 
         // Make uid not nullable and unique after populating

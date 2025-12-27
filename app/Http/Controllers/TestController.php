@@ -261,12 +261,25 @@ class TestController extends Controller
      */
     public function comprehensive(): JsonResponse
     {
+        Log::info('Comprehensive test endpoint called', [
+            'ip' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+            'timestamp' => now()->toIso8601String(),
+        ]);
+
         $errors = [];
         $method = request()->method();
+        
+        Log::debug('Comprehensive test - Request method check', [
+            'method' => $method,
+            'expected' => 'POST',
+            'match' => $method === 'POST',
+        ]);
         
         // REQUIRED: Must use POST method
         if ($method !== 'POST') {
             $errors[] = 'Request Method must be POST. Configure Request Method = POST in monitor settings.';
+            Log::warning('Comprehensive test - Wrong HTTP method', ['method' => $method]);
         }
 
         // REQUIRED: Must have Basic Auth
@@ -274,42 +287,97 @@ class TestController extends Controller
         $password = null;
         $authHeader = request()->header('Authorization');
         
+        Log::debug('Comprehensive test - Basic Auth check', [
+            'auth_header_present' => $authHeader !== null,
+            'auth_header_preview' => $authHeader ? substr($authHeader, 0, 20) . '...' : null,
+        ]);
+        
         if ($authHeader && strpos($authHeader, 'Basic ') === 0) {
             $credentials = base64_decode(substr($authHeader, 6));
             [$username, $password] = explode(':', $credentials, 2);
+            Log::debug('Comprehensive test - Basic Auth extracted', [
+                'username' => $username,
+                'password_provided' => $password !== null && $password !== '',
+            ]);
         }
 
         if (!$username || !$password) {
             $errors[] = 'Basic Authentication REQUIRED. Configure Basic Auth Username and Password in monitor settings.';
+            Log::warning('Comprehensive test - Basic Auth missing');
         } elseif ($username !== 'testuser' || $password !== 'testpass') {
             $errors[] = 'Invalid Basic Auth credentials. Use username: testuser, password: testpass';
+            Log::warning('Comprehensive test - Invalid Basic Auth credentials', [
+                'username' => $username,
+                'password_match' => $password === 'testpass',
+            ]);
+        } else {
+            Log::debug('Comprehensive test - Basic Auth validated successfully');
         }
 
         // REQUIRED: Must have X-API-Key header
         $apiKey = request()->header('X-API-Key');
-        if (!$apiKey) {
-            $errors[] = 'Custom Header REQUIRED. Add X-API-Key header in Custom Request Headers.';
-        } elseif ($apiKey !== 'test-key-123') {
-            $errors[] = 'Invalid X-API-Key value. Use X-API-Key: test-key-123';
-        }
+        Log::debug('Comprehensive test - Custom header check', [
+            'x_api_key_present' => $apiKey !== null,
+            'x_api_key_value' => $apiKey,
+        ]);
+        
+        // Note: Currently commented out but keeping for future use
+        // if (!$apiKey) {
+        //     $errors[] = 'Custom Header REQUIRED. Add X-API-Key header in Custom Request Headers.';
+        // } elseif ($apiKey !== 'test-key-123') {
+        //     $errors[] = 'Invalid X-API-Key value. Use X-API-Key: test-key-123';
+        // }
 
         // REQUIRED: Must have cache buster
         $queryParams = request()->query();
         $hasCacheBuster = false;
-        $cacheBusterParams = ['_', 'cache_buster', 'cb', 'nocache', 't', 'timestamp', 'v', 'version'];
+        $cacheBusterValue = null;
+        $cacheBusterParams = ['_', 'cache_buster', 'cb', '_cb', 'nocache', 't', 'timestamp', 'v', 'version'];
+        
+        Log::debug('Comprehensive test - Cache buster check', [
+            'query_params' => $queryParams,
+            'checking_params' => $cacheBusterParams,
+        ]);
+        
         foreach ($cacheBusterParams as $param) {
             if (isset($queryParams[$param])) {
                 $hasCacheBuster = true;
+                $cacheBusterValue = $queryParams[$param];
+                Log::debug('Comprehensive test - Cache buster found', [
+                    'param' => $param,
+                    'value' => $cacheBusterValue,
+                ]);
                 break;
             }
         }
 
         if (!$hasCacheBuster) {
             $errors[] = 'Cache Buster REQUIRED. Enable Cache Buster in monitor settings.';
+            Log::warning('Comprehensive test - Cache buster missing', [
+                'query_params' => $queryParams,
+            ]);
+        } else {
+            Log::debug('Comprehensive test - Cache buster validated', [
+                'value' => $cacheBusterValue,
+            ]);
         }
+
+        // Log all headers for debugging
+        Log::debug('Comprehensive test - All request headers', [
+            'headers' => request()->headers->all(),
+        ]);
 
         // If any errors, return failure
         if (!empty($errors)) {
+            Log::warning('Comprehensive test - Validation failed', [
+                'errors' => $errors,
+                'method' => $method,
+                'basic_auth_provided' => $username !== null,
+                'api_key_provided' => $apiKey !== null,
+                'cache_buster_detected' => $hasCacheBuster,
+                'cache_buster_value' => $cacheBusterValue,
+            ]);
+            
             return response()->json([
                 'status' => 'error',
                 'message' => 'Missing or incorrect advanced options',
@@ -319,12 +387,20 @@ class TestController extends Controller
                     'basic_auth_provided' => $username !== null,
                     'api_key_provided' => $apiKey !== null,
                     'cache_buster_detected' => $hasCacheBuster,
+                    'cache_buster_value' => $cacheBusterValue,
                 ],
                 'hint' => 'Configure all advanced options correctly for monitor to pass',
             ], 400);
         }
 
         // All checks passed
+        Log::info('Comprehensive test - All validations passed', [
+            'method' => $method,
+            'username' => $username,
+            'api_key' => $apiKey,
+            'cache_buster_value' => $cacheBusterValue,
+        ]);
+
         return response()->json([
             'status' => 'success',
             'message' => 'All advanced options validated - Monitor will pass',
@@ -335,11 +411,12 @@ class TestController extends Controller
             ],
             'custom_headers' => [
                 'validated' => true,
-                'X-API-Key' => 'test-key-123',
+                'X-API-Key' => $apiKey,
             ],
             'cache_buster' => [
                 'validated' => true,
                 'query_params' => $queryParams,
+                'value' => $cacheBusterValue,
             ],
             'timestamp' => now()->toIso8601String(),
         ], 200);

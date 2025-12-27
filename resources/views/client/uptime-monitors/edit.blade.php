@@ -176,10 +176,14 @@
                                            id="check_ssl" name="check_ssl" value="1" 
                                            {{ old('check_ssl', $monitor->check_ssl) ? 'checked' : '' }}>
                                     <label class="form-check-label" for="check_ssl">
-                                        Check SSL Certificate Validity
+                                        Enable SSL Verification
                                     </label>
                                 </div>
-                                <small class="text-muted">Verify that the SSL certificate is valid and not expired</small>
+                                <small class="text-muted d-block mt-1">
+                                    <i class="ri-information-line me-1"></i>
+                                    <strong>Disable this</strong> to monitor sites with invalid/self-signed certificates or incomplete certificate chains. 
+                                    This allows checking server up/down status regardless of SSL certificate issues.
+                                </small>
                             </div>
 
                             <div class="col-md-6 mb-3">

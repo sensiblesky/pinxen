@@ -11,6 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Skip if table already exists (created by previous migration)
+        if (Schema::hasTable('monitor_checks')) {
+            return;
+        }
+        
         Schema::create('monitor_checks', function (Blueprint $table) {
             $table->id();
             $table->foreignId('monitor_id')->constrained()->onDelete('cascade');

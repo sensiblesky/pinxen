@@ -48,5 +48,43 @@ Route::middleware(['auth', 'force.email.verification', 'force.2fa', 'client'])->
         'dns-monitors' => 'dnsMonitor'
     ]);
     Route::post('/dns-monitors/{dnsMonitor}/recheck', [\App\Http\Controllers\DNSMonitorController::class, 'recheck'])->name('dns-monitors.recheck');
+    
+    // API Monitors
+    Route::resource('api-monitors', \App\Http\Controllers\ApiMonitorController::class)->parameters([
+        'api-monitors' => 'apiMonitor'
+    ]);
+    Route::get('/api-monitors/{apiMonitor}/checks-data', [\App\Http\Controllers\ApiMonitorController::class, 'getChecksData'])->name('api-monitors.checks-data');
+    Route::get('/api-monitors/{apiMonitor}/alerts-data', [\App\Http\Controllers\ApiMonitorController::class, 'getAlertsData'])->name('api-monitors.alerts-data');
+    Route::post('/api-monitors/{apiMonitor}/test-now', [\App\Http\Controllers\ApiMonitorController::class, 'testNow'])->name('api-monitors.test-now');
+    Route::get('/api-monitors/{apiMonitor}/chart-data', [\App\Http\Controllers\ApiMonitorController::class, 'getChartDataApi'])->name('api-monitors.chart-data');
+    Route::post('/api-monitors/{apiMonitor}/duplicate', [\App\Http\Controllers\ApiMonitorController::class, 'duplicate'])->name('api-monitors.duplicate');
+    Route::post('/api-monitors/bulk-action', [\App\Http\Controllers\ApiMonitorController::class, 'bulkAction'])->name('api-monitors.bulk-action');
+    Route::get('/api-monitors/{apiMonitor}/export-checks', [\App\Http\Controllers\ApiMonitorController::class, 'exportChecks'])->name('api-monitors.export-checks');
+    Route::get('/api-monitors/{apiMonitor}/export-alerts', [\App\Http\Controllers\ApiMonitorController::class, 'exportAlerts'])->name('api-monitors.export-alerts');
+    
+    // Dependency Management
+    Route::post('/api-monitors/dependencies/{dependency}/confirm', [\App\Http\Controllers\ApiMonitorController::class, 'confirmDependency'])->name('api-monitors.dependencies.confirm');
+    Route::delete('/api-monitors/dependencies/{dependency}', [\App\Http\Controllers\ApiMonitorController::class, 'deleteDependency'])->name('api-monitors.dependencies.delete');
+    Route::post('/api-monitors/dependencies/{dependency}/toggle-suppress', [\App\Http\Controllers\ApiMonitorController::class, 'toggleSuppressAlerts'])->name('api-monitors.dependencies.toggle-suppress');
+    
+    // Replay Failed Requests
+    Route::post('/api-monitors/checks/{check}/replay', [\App\Http\Controllers\ApiMonitorController::class, 'replayCheck'])->name('api-monitors.checks.replay');
+    Route::get('/api-monitors/checks/{check}/details', [\App\Http\Controllers\ApiMonitorController::class, 'getCheckDetails'])->name('api-monitors.checks.details');
+    
+    // API Keys (Developer Options)
+    Route::resource('api-keys', \App\Http\Controllers\ApiKeyController::class)->parameters([
+        'api-keys' => 'apiKey'
+    ]);
+    Route::post('/api-keys/{apiKey}/regenerate', [\App\Http\Controllers\ApiKeyController::class, 'regenerate'])->name('api-keys.regenerate');
+    Route::post('/api-keys/{apiKey}/toggle', [\App\Http\Controllers\ApiKeyController::class, 'toggle'])->name('api-keys.toggle');
+    
+    // Servers (Server Monitoring)
+    Route::resource('servers', \App\Http\Controllers\ServerController::class)->parameters([
+        'servers' => 'server'
+    ]);
+    Route::post('/servers/{server}/regenerate-key', [\App\Http\Controllers\ServerController::class, 'regenerateKey'])->name('servers.regenerate-key');
+    Route::get('/servers/{server}/disk-data', [\App\Http\Controllers\ServerController::class, 'getDiskData'])->name('servers.disk-data');
+    Route::get('/servers/{server}/network-data', [\App\Http\Controllers\ServerController::class, 'getNetworkData'])->name('servers.network-data');
+    Route::get('/servers/{server}/processes-data', [\App\Http\Controllers\ServerController::class, 'getProcessesData'])->name('servers.processes-data');
 });
 

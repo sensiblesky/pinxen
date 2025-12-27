@@ -582,6 +582,7 @@
                                         <th>Status</th>
                                         <th>Response Time</th>
                                         <th>Status Code</th>
+                                        <th>Layers</th>
                                         <th>Response</th>
                                         <th>Checked At</th>
                                     </tr>
@@ -1264,6 +1265,23 @@
             const startDate = urlParams.get('start_date') || null;
             const endDate = urlParams.get('end_date') || null;
             
+            // Helper function to get failure type badge class
+            function getFailureTypeClass(failureType) {
+                const typeMap = {
+                    'dns_failure': 'bg-danger-transparent text-danger',
+                    'ssl_failure': 'bg-warning-transparent text-warning',
+                    'tcp_connection_refused': 'bg-danger-transparent text-danger',
+                    'http_5xx': 'bg-danger-transparent text-danger',
+                    'cdn_edge_failure': 'bg-info-transparent text-info',
+                    'firewall_geo_block': 'bg-secondary-transparent text-secondary',
+                    'origin_slow': 'bg-warning-transparent text-warning',
+                    'http_4xx': 'bg-warning-transparent text-warning',
+                    'timeout': 'bg-danger-transparent text-danger',
+                    'unknown': 'bg-secondary-transparent text-secondary',
+                };
+                return typeMap[failureType] || 'bg-secondary-transparent text-secondary';
+            }
+
             // Initialize DataTables with server-side processing for Checks
             $('#checks-table').DataTable({
                 processing: true,
@@ -1310,14 +1328,72 @@
                         }
                     },
                     { 
+                        data: 'layer_checks', 
+                        name: 'layer_checks',
+                        orderable: false,
+                        render: function(data, type, row) {
+                            if (!data) {
+                                return '<span class="text-muted">-</span>';
+                            }
+                            
+                            const layers = ['dns', 'tcp', 'tls', 'http', 'content'];
+                            let html = '<div class="d-flex gap-1 flex-wrap">';
+                            
+                            layers.forEach(layer => {
+                                if (data[layer]) {
+                                    const layerData = data[layer];
+                                    const isSuccess = layerData.status === 'success';
+                                    const icon = isSuccess ? 'ri-checkbox-circle-line' : 'ri-close-circle-line';
+                                    const color = isSuccess ? 'text-success' : 'text-danger';
+                                    const symbol = isSuccess ? '✔' : '✖';
+                                    
+                                    html += `<span class="badge ${isSuccess ? 'bg-success-transparent' : 'bg-danger-transparent'} ${color} fs-11" title="${layerData.message || layer}">${layer.toUpperCase()} ${symbol}</span>`;
+                                } else {
+                                    html += `<span class="badge bg-secondary-transparent text-secondary fs-11" title="Not checked">${layer.toUpperCase()} —</span>`;
+                                }
+                            });
+                            
+                            html += '</div>';
+                            return html;
+                        }
+                    },
+                    { 
                         data: 'error_message', 
                         name: 'error_message',
-                        render: function(data) {
-                            if (data) {
-                                const truncated = data.length > 50 ? data.substring(0, 50) + '...' : data;
-                                return '<span class="text-danger" title="' + data + '">' + truncated + '</span>';
+                        render: function(data, type, row) {
+                            let html = '';
+                            
+                            // Show probe results if available
+                            if (row.probe_results && row.probe_results.length > 0) {
+                                const failed = row.probes_failed || 0;
+                                const total = row.probes_total || row.probe_results.length;
+                                const confirmed = row.is_confirmed || false;
+                                
+                                html += '<div class="mb-2">';
+                                html += `<span class="badge ${confirmed ? 'bg-danger-transparent text-danger' : 'bg-warning-transparent text-warning'} mb-1">`;
+                                html += `${failed}/${total} probes failed`;
+                                if (confirmed) {
+                                    html += ' <i class="ri-checkbox-circle-line"></i> Confirmed';
+                                }
+                                html += '</span>';
+                                html += '</div>';
                             }
-                            return '<span class="text-muted">-</span>';
+                            
+                            // Show failure classification if available, otherwise show error message
+                            if (row.failure_classification) {
+                                const typeClass = getFailureTypeClass(row.failure_type);
+                                html += '<span class="badge ' + typeClass + ' mb-1 d-block">' + row.failure_classification + '</span>';
+                                if (row.error_message) {
+                                    html += '<small class="text-muted d-block">' + (row.error_message.length > 50 ? row.error_message.substring(0, 50) + '...' : row.error_message) + '</small>';
+                                }
+                            } else if (row.error_message) {
+                                const truncated = row.error_message.length > 50 ? row.error_message.substring(0, 50) + '...' : row.error_message;
+                                html += '<span class="text-danger" title="' + row.error_message + '">' + truncated + '</span>';
+                            } else {
+                                html += '<span class="text-success"><i class="ri-checkbox-circle-line me-1"></i>OK</span>';
+                            }
+                            
+                            return html;
                         }
                     },
                     { 
@@ -1328,7 +1404,7 @@
                         }
                     }
                 ],
-                order: [[5, 'desc']],
+                order: [[6, 'desc']],
                 pageLength: 5,
                 lengthMenu: [[5], [5]], // Only show 5 records option
                 language: {
@@ -1411,7 +1487,7 @@
                         }
                     }
                 ],
-                order: [[5, 'desc']],
+                order: [[6, 'desc']],
                 pageLength: 5,
                 lengthMenu: [[5], [5]], // Only show 5 records option
                 language: {

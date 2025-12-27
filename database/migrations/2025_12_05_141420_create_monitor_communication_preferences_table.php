@@ -24,7 +24,7 @@ return new class extends Migration
             $table->boolean('is_enabled')->default(true);
             $table->timestamps();
             
-            $table->unique(['monitor_id', 'communication_channel']);
+            $table->unique(['monitor_id', 'communication_channel'], 'monitor_comm_prefs_unique');
             $table->index('monitor_id');
         });
     }

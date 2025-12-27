@@ -15,11 +15,21 @@ class UptimeMonitorCheck extends Model
         'response_time',
         'status_code',
         'error_message',
+        'failure_type',
+        'failure_classification',
+        'layer_checks',
+        'probe_results',
+        'is_confirmed',
+        'probes_failed',
+        'probes_total',
         'checked_at',
     ];
 
     protected $casts = [
         'checked_at' => 'datetime',
+        'layer_checks' => 'array',
+        'probe_results' => 'array',
+        'is_confirmed' => 'boolean',
     ];
 
     public function uptimeMonitor(): BelongsTo

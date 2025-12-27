@@ -18,10 +18,12 @@ return new class extends Migration
         }
 
         // Generate UUIDs for existing records that don't have one
-        $plans = \App\Models\SubscriptionPlan::whereNull('uid')->get();
+        // Use DB facade directly to avoid SoftDeletes issue
+        $plans = \DB::table('subscription_plans')->whereNull('uid')->get();
         foreach ($plans as $plan) {
-            $plan->uid = \Illuminate\Support\Str::uuid()->toString();
-            $plan->save();
+            \DB::table('subscription_plans')
+                ->where('id', $plan->id)
+                ->update(['uid' => \Illuminate\Support\Str::uuid()->toString()]);
         }
 
         // Make uid not nullable and unique after populating

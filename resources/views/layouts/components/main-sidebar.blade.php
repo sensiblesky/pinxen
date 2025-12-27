@@ -82,7 +82,7 @@
 
 									<!-- Start::slide - Monitoring Services -->
 									@php
-										$isMonitoringActive = request()->is('uptime-monitors*') || request()->is('domain-monitors*') || request()->is('ssl-monitors*') || request()->is('dns-monitors*');
+										$isMonitoringActive = request()->is('uptime-monitors*') || request()->is('domain-monitors*') || request()->is('ssl-monitors*') || request()->is('dns-monitors*') || request()->is('api-monitors*') || request()->is('servers*');
 									@endphp
 									<li class="slide has-sub {{ $isMonitoringActive ? 'active open' : '' }}">
 										<a href="javascript:void(0);" class="side-menu__item">
@@ -95,7 +95,7 @@
 												<a href="javascript:void(0)">Monitoring</a>
 											</li>
 											<!-- Web Monitoring Submenu -->
-											<li class="slide has-sub {{ request()->is('uptime-monitors*') || request()->is('domain-monitors*') || request()->is('ssl-monitors*') || request()->is('dns-monitors*') ? 'active open' : '' }}">
+											<li class="slide has-sub {{ request()->is('uptime-monitors*') || request()->is('domain-monitors*') || request()->is('ssl-monitors*') || request()->is('dns-monitors*') || request()->is('api-monitors*') || request()->is('servers*') ? 'active open' : '' }}">
 												<a href="javascript:void(0);" class="side-menu__item">
 													<svg xmlns="http://www.w3.org/2000/svg" class="side-menu-doublemenu__icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><circle cx="128" cy="128" r="40" opacity="0.2"/><circle cx="128" cy="128" r="40" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><path d="M88,128a40,40,0,0,1,40-40,40,40,0,0,1,40,40,40,40,0,0,1-40,40,40,40,0,0,1-40-40Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><path d="M128,88a40,40,0,0,1,40,40,40,40,0,0,1-40,40,40,40,0,0,1-40-40,40,40,0,0,1,40-40Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><path d="M128,32a96,96,0,0,1,96,96,96,96,0,0,1-96,96,96,96,0,0,1-96-96,96,96,0,0,1,96-96Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg>
 													Web Monitoring
@@ -122,20 +122,36 @@
 															<i class="ri-dns-line me-2"></i>DNS Monitor
 														</a>
 													</li>
+													<li class="slide {{ request()->is('api-monitors*') ? 'active' : '' }}">
+														<a href="{{ route('api-monitors.index') }}" class="side-menu__item">
+															<i class="ri-code-s-slash-line me-2"></i>API Monitor
+														</a>
+													</li>
 													<!-- Future: Other monitors will be added here -->
 												</ul>
 											</li>
-											<!-- Server Monitoring (Future) -->
-											<li class="slide">
-												<a href="javascript:void(0);" class="side-menu__item">
+											<!-- Server Monitoring -->
+											<li class="slide {{ request()->is('servers*') ? 'active' : '' }}">
+												<a href="{{ route('servers.index') }}" class="side-menu__item">
 													<svg xmlns="http://www.w3.org/2000/svg" class="side-menu-doublemenu__icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><rect x="32" y="48" width="192" height="160" rx="8" opacity="0.2"/><rect x="32" y="48" width="192" height="160" rx="8" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="32" y1="96" x2="224" y2="96" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="32" y1="160" x2="224" y2="160" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><circle cx="64" cy="72" r="8" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><circle cx="64" cy="136" r="8" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><circle cx="64" cy="200" r="8" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg>
 													Server Monitoring
-													<span class="badge bg-secondary-transparent text-secondary ms-auto">Coming Soon</span>
 												</a>
 											</li>
 										</ul>
 									</li>
 									<!-- End::slide - Monitoring Services -->
+
+									<!-- Start::slide - Developer Options -->
+									@php
+										$isDeveloperActive = request()->is('api-keys*');
+									@endphp
+									<li class="slide {{ $isDeveloperActive ? 'active' : '' }}">
+										<a href="{{ route('api-keys.index') }}" class="side-menu__item">
+											<svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Z" opacity="0.2"/><circle cx="128" cy="128" r="96" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><polyline points="128 72 128 128 184 128" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg>
+											<span class="side-menu__label">Developer Options</span>
+										</a>
+									</li>
+									<!-- End::slide - Developer Options -->
 
 								@endif
 

@@ -17,13 +17,29 @@ return new class extends Migration
             return;
         }
 
-        Schema::table('monitor_communication_preferences', function (Blueprint $table) {
-            // Drop the foreign key constraint
-            $table->dropForeign(['monitor_id']);
-            
-            // Drop the unique constraint that includes monitor_id
-            $table->dropUnique('monitor_comm_pref_unique');
-        });
+        // Drop foreign key and unique constraint if they exist
+        try {
+            Schema::table('monitor_communication_preferences', function (Blueprint $table) {
+                $table->dropForeign(['monitor_id']);
+            });
+        } catch (\Exception $e) {
+            // Foreign key doesn't exist, continue
+        }
+        
+        try {
+            Schema::table('monitor_communication_preferences', function (Blueprint $table) {
+                $table->dropUnique('monitor_comm_pref_unique');
+            });
+        } catch (\Exception $e) {
+            // Try alternative name
+            try {
+                Schema::table('monitor_communication_preferences', function (Blueprint $table) {
+                    $table->dropUnique('monitor_comm_prefs_unique');
+                });
+            } catch (\Exception $e2) {
+                // Neither exists, continue
+            }
+        }
 
         // Modify monitor_id column to be a regular integer (not foreign key)
         DB::statement('ALTER TABLE monitor_communication_preferences MODIFY monitor_id BIGINT UNSIGNED NOT NULL');

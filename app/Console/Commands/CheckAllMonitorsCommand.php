@@ -5,9 +5,11 @@ namespace App\Console\Commands;
 use App\Jobs\UptimeMonitorCheckJob;
 use App\Jobs\SSLMonitorCheckJob;
 use App\Jobs\DNSMonitorCheckJob;
+use App\Jobs\ApiMonitorCheckJob;
 use App\Models\UptimeMonitor;
 use App\Models\SSLMonitor;
 use App\Models\DNSMonitor;
+use App\Models\ApiMonitor;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
@@ -57,6 +59,11 @@ class CheckAllMonitorsCommand extends Command
                 'name' => 'DNS Monitoring',
                 'model' => DNSMonitor::class,
                 'job' => DNSMonitorCheckJob::class,
+            ],
+            'api' => [
+                'name' => 'API Monitoring',
+                'model' => ApiMonitor::class,
+                'job' => ApiMonitorCheckJob::class,
             ],
             // Future services will be added here:
             // 'ssh' => [...],

@@ -100,3 +100,8 @@ Route::middleware('auth')->group(function () {
 });
 
 require __DIR__.'/auth.php';
+
+// API Routes (for Linux agent)
+Route::prefix('api/v1')->middleware(['api', \App\Http\Middleware\AuthenticateApiKey::class])->group(function () {
+    Route::post('/server-stats', [\App\Http\Controllers\Api\ServerStatsController::class, 'store'])->name('api.server-stats.store');
+});

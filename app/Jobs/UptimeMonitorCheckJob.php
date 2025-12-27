@@ -70,6 +70,13 @@ class UptimeMonitorCheckJob implements ShouldQueue
                 'response_time' => $result['response_time'],
                 'status_code' => $result['status_code'],
                 'error_message' => $result['error_message'],
+                'failure_type' => $result['failure_type'] ?? null,
+                'failure_classification' => $result['failure_classification'] ?? null,
+                'layer_checks' => $result['layer_checks'] ?? null,
+                'probe_results' => $result['probe_results'] ?? null,
+                'is_confirmed' => $result['is_confirmed'] ?? false,
+                'probes_failed' => $result['probes_failed'] ?? 0,
+                'probes_total' => $result['probes_total'] ?? 1,
                 'checked_at' => now(),
             ]);
 
@@ -156,6 +163,7 @@ class UptimeMonitorCheckJob implements ShouldQueue
 
     /**
      * Perform HTTP check for uptime monitor.
+     * Uses multi-probe confirmation logic if enabled.
      */
     private function performHttpCheck(UptimeMonitor $monitor): array
     {
@@ -163,7 +171,22 @@ class UptimeMonitorCheckJob implements ShouldQueue
             // Ensure timeout doesn't exceed job timeout
             $timeout = min($monitor->timeout ?? 30, 120); // Max 2 minutes for HTTP request
             
-            return MonitorHttpService::performCheck(
+            // Use multi-probe confirmation if enabled
+            if ($monitor->confirmation_enabled) {
+                return \App\Services\MultiProbeService::performMultiProbeCheck(
+                    $monitor->url,
+                    $monitor->confirmation_probes ?? 3,
+                    $monitor->confirmation_threshold ?? 2,
+                    $timeout,
+                    $monitor->expected_status_code,
+                    $monitor->check_ssl,
+                    $monitor->confirmation_retry_delay ?? 5,
+                    $monitor->confirmation_max_retries ?? 3
+                );
+            }
+            
+            // Standard single check
+            $result = MonitorHttpService::performCheck(
                 $monitor->url,
                 $timeout,
                 $monitor->expected_status_code,
@@ -176,6 +199,24 @@ class UptimeMonitorCheckJob implements ShouldQueue
                 $monitor->custom_headers,
                 $monitor->cache_buster ?? false
             );
+            
+            // Add layer checks for single probe
+            if ($result['status'] === 'down' || true) { // Always perform layer checks
+                try {
+                    $layerChecks = \App\Services\LayerCheckService::performLayerChecks(
+                        $monitor->url,
+                        $monitor->check_ssl,
+                        $timeout,
+                        $monitor->keyword_present,
+                        $monitor->keyword_absent
+                    );
+                    $result['layer_checks'] = $layerChecks;
+                } catch (\Exception $layerException) {
+                    // Ignore layer check errors
+                }
+            }
+            
+            return $result;
         } catch (\Exception $e) {
             // Return error result instead of throwing
             Log::error("HTTP check failed for uptime monitor", [
@@ -189,6 +230,9 @@ class UptimeMonitorCheckJob implements ShouldQueue
                 'response_time' => 0,
                 'status_code' => null,
                 'error_message' => 'Check failed: ' . $e->getMessage(),
+                'is_confirmed' => false,
+                'probes_total' => 1,
+                'probes_failed' => 1,
             ];
         }
     }
@@ -226,17 +270,26 @@ class UptimeMonitorCheckJob implements ShouldQueue
      */
     private function sendDownAlert(UptimeMonitor $monitor, array $result): void
     {
-        $message = "Monitor {$monitor->name} ({$monitor->url}) is DOWN. ";
-        if ($result['error_message']) {
-            $message .= "Error: {$result['error_message']}";
-        } else {
-            $message .= "Status code: {$result['status_code']}";
+        // Build alert message with failure classification
+        $message = "Website DOWN";
+        
+        // Add failure classification if available
+        if (!empty($result['failure_classification'])) {
+            $message .= " — {$result['failure_classification']}";
+        } elseif ($result['error_message']) {
+            $message .= " — {$result['error_message']}";
+        } elseif ($result['status_code']) {
+            $message .= " — HTTP {$result['status_code']}";
         }
+        
+        $message .= " ({$monitor->name})";
 
         $details = [
             'response_time' => $result['response_time'],
             'status_code' => $result['status_code'],
             'error_message' => $result['error_message'],
+            'failure_type' => $result['failure_type'] ?? null,
+            'failure_classification' => $result['failure_classification'] ?? null,
         ];
 
         try {

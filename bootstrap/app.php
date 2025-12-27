@@ -27,6 +27,12 @@ return Application::configure(basePath: dirname(__DIR__))
             'force.email.verification' => \App\Http\Middleware\ForceEmailVerification::class,
             'force.2fa' => \App\Http\Middleware\ForceTwoFactorAuthentication::class,
         ]);
+        
+        // Exclude test endpoints and API routes from CSRF protection
+        $middleware->validateCsrfTokens(except: [
+            'test/*',
+            'api/v1/*',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
