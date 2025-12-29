@@ -1,1 +1,47 @@
-cd /Users/denicsann/Desktop/projects/pingxeno/pannel && php artisan schedule:work > storage/pids/scheduler.log 2>&1 & php artisan queue:work --queue=monitor-checks,ssl-checks,dns-checks,domain-checks,emails --tries=3 --timeout=300 --sleep=3 --max-jobs=1000 > storage/pids/queue-all.log 2>&1 & echo "All services started!"
+# Laravel Services Management
+
+## Quick Start Commands
+
+### Start All Services
+```bash
+./start-services.sh
+```
+
+### Stop All Services
+```bash
+./stop-services.sh
+```
+
+### Manual Start (if scripts don't work)
+```bash
+# Create directory first
+mkdir -p storage/pids
+
+# Start scheduler
+nohup php artisan schedule:work > storage/pids/scheduler.log 2>&1 &
+
+# Start queue worker
+nohup php artisan queue:work --queue=monitor-checks,ssl-checks,dns-checks,domain-checks,emails --tries=3 --timeout=300 --sleep=3 --max-jobs=1000 > storage/pids/queue-all.log 2>&1 &
+```
+
+### Check Running Services
+```bash
+# Check scheduler
+ps aux | grep "schedule:work"
+
+# Check queue worker
+ps aux | grep "queue:work"
+
+# View logs
+tail -f storage/pids/scheduler.log
+tail -f storage/pids/queue-all.log
+```
+
+### Stop Services Manually
+```bash
+# Find and kill scheduler
+pkill -f "schedule:work"
+
+# Find and kill queue worker
+pkill -f "queue:work"
+```

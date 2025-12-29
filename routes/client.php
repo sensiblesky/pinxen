@@ -6,9 +6,7 @@ use Illuminate\Support\Facades\Route;
 // Note: Force email verification and 2FA are applied globally via web.php, but client routes need them too
 Route::middleware(['auth', 'force.email.verification', 'force.2fa', 'client'])->group(function () {
     // Client Dashboard
-    Route::get('/dashboard', function () {
-        return view('client.dashboard');
-    })->name('dashboard');
+    Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
     
     // Subscriptions
     Route::get('/subscriptions', [\App\Http\Controllers\SubscriptionController::class, 'index'])->name('subscriptions.index');
@@ -86,5 +84,12 @@ Route::middleware(['auth', 'force.email.verification', 'force.2fa', 'client'])->
     Route::get('/servers/{server}/disk-data', [\App\Http\Controllers\ServerController::class, 'getDiskData'])->name('servers.disk-data');
     Route::get('/servers/{server}/network-data', [\App\Http\Controllers\ServerController::class, 'getNetworkData'])->name('servers.network-data');
     Route::get('/servers/{server}/processes-data', [\App\Http\Controllers\ServerController::class, 'getProcessesData'])->name('servers.processes-data');
+    
+    // Agent download and installation routes
+    Route::get('/agents/{server}/download/{os}/{arch?}', [\App\Http\Controllers\AgentController::class, 'download'])->name('agents.download');
+    Route::get('/agents/{server}/install-script/{os}/{arch?}', [\App\Http\Controllers\AgentController::class, 'installScript'])->name('agents.install-script');
+    Route::get('/agents/{server}/install-oneliner/{os}/{arch?}', [\App\Http\Controllers\AgentController::class, 'installScriptOneLiner'])->name('agents.install-oneliner');
+    Route::post('/servers/{server}/install-via-ssh', [\App\Http\Controllers\ServerController::class, 'installViaSSH'])->name('servers.install-via-ssh');
+    Route::post('/servers/{server}/test-ssh', [\App\Http\Controllers\ServerController::class, 'testSSH'])->name('servers.test-ssh');
 });
 

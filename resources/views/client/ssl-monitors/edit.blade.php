@@ -1,5 +1,7 @@
 @extends('layouts.master')
 
+@section('title', 'Edit SSL Monitor - PingXeno')
+
 @section('styles')
 @endsection
 

@@ -32,6 +32,52 @@ class UptimeMonitorController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
+        // Extract all unique domains from monitors (optimize: bulk load instead of N+1 queries)
+        $domains = [];
+        foreach ($monitors as $monitor) {
+            $host = parse_url($monitor->url, PHP_URL_HOST);
+            if ($host) {
+                $domain = strtolower(trim($host));
+                $domains[$domain] = true;
+            }
+        }
+        $domainList = array_keys($domains);
+
+        // Bulk load DomainMonitor and SSLMonitor records for matching domains
+        // Use whereRaw with multiple OR conditions to match normalized domains
+        $domainMonitorsMap = [];
+        $sslMonitorsMap = [];
+        
+        if (!empty($domainList)) {
+            // Build whereRaw conditions for normalized domain matching
+            $domainConditions = [];
+            $bindings = [];
+            foreach ($domainList as $domain) {
+                $domainConditions[] = 'LOWER(TRIM(domain)) = ?';
+                $bindings[] = $domain;
+            }
+            
+            // Load DomainMonitors with normalized domain matching
+            $domainMonitors = DomainMonitor::where('user_id', $user->id)
+                ->whereRaw('(' . implode(' OR ', $domainConditions) . ')', $bindings)
+                ->get();
+            
+            foreach ($domainMonitors as $dm) {
+                $normalizedDomain = strtolower(trim($dm->domain));
+                $domainMonitorsMap[$normalizedDomain] = $dm;
+            }
+            
+            // Load SSLMonitors with normalized domain matching
+            $sslMonitors = SSLMonitor::where('user_id', $user->id)
+                ->whereRaw('(' . implode(' OR ', $domainConditions) . ')', $bindings)
+                ->get();
+            
+            foreach ($sslMonitors as $sm) {
+                $normalizedDomain = strtolower(trim($sm->domain));
+                $sslMonitorsMap[$normalizedDomain] = $sm;
+            }
+        }
+
         // Pre-compute favicon and summary info (WHOIS / SSL) for tooltips
         $monitorMeta = [];
         foreach ($monitors as $monitor) {
@@ -40,17 +86,9 @@ class UptimeMonitorController extends Controller
 
             $faviconUrl = $domain ? "https://www.google.com/s2/favicons?domain={$domain}&sz=32" : null;
 
-            $whois = null;
-            $ssl = null;
-            if ($domain) {
-                $whois = DomainMonitor::where('user_id', $user->id)
-                    ->whereRaw('LOWER(TRIM(domain)) = ?', [$domain])
-                    ->first();
-
-                $ssl = SSLMonitor::where('user_id', $user->id)
-                    ->whereRaw('LOWER(TRIM(domain)) = ?', [$domain])
-                    ->first();
-            }
+            // Use pre-loaded maps instead of querying
+            $whois = $domain && isset($domainMonitorsMap[$domain]) ? $domainMonitorsMap[$domain] : null;
+            $ssl = $domain && isset($sslMonitorsMap[$domain]) ? $sslMonitorsMap[$domain] : null;
 
             $whoisText = $whois && $whois->expiration_date
                 ? 'WHOIS: expires ' . $whois->expiration_date->format('Y-m-d')
@@ -386,8 +424,11 @@ class UptimeMonitorController extends Controller
                 break;
         }
 
-        // Build query with optional date filter
-        $checksQuery = $uptimeMonitor->checks();
+        // Increase memory limit for show page
+        ini_set('memory_limit', '256M');
+        
+        // Build query with optional date filter (clear orderBy from relationship for aggregation queries)
+        $checksQuery = $uptimeMonitor->checks()->reorder();
         if ($startDate) {
             $checksQuery->where('checked_at', '>=', $startDate);
         }
@@ -395,19 +436,55 @@ class UptimeMonitorController extends Controller
             $checksQuery->where('checked_at', '<=', $endDate);
         }
 
-        // Calculate statistics from filtered data
-        $allChecks = $checksQuery->orderBy('checked_at', 'asc')->get();
-        
-        $totalChecks = $allChecks->count();
-        $upChecks = $allChecks->where('status', 'up')->count();
-        $downChecks = $allChecks->where('status', 'down')->count();
+        // Calculate statistics using database aggregation (much faster, uses less memory)
+        $totalChecks = (clone $checksQuery)->count();
+        $upChecks = (clone $checksQuery)->where('status', 'up')->count();
+        $downChecks = (clone $checksQuery)->where('status', 'down')->count();
         $uptimePercentage = $totalChecks > 0 ? round(($upChecks / $totalChecks) * 100, 2) : 0;
         
-        // Get daily status timeline data for last 90 days
+        // Get response time stats using aggregation (clear orderBy from relationship)
+        $responseTimeStats = $uptimeMonitor->checks()
+            ->reorder() // Clear any orderBy from relationship definition
+            ->where('status', 'up')
+            ->whereNotNull('response_time');
+        
+        // Apply date filters if set
+        if ($startDate) {
+            $responseTimeStats->where('checked_at', '>=', $startDate);
+        }
+        if ($endDate) {
+            $responseTimeStats->where('checked_at', '<=', $endDate);
+        }
+        
+        $responseTimeStats = $responseTimeStats
+            ->selectRaw('AVG(response_time) as avg_response, MIN(response_time) as min_response, MAX(response_time) as max_response')
+            ->first();
+        
+        $avgResponseTime = $responseTimeStats ? round($responseTimeStats->avg_response, 2) : 0;
+        $minResponseTime = $responseTimeStats ? round($responseTimeStats->min_response, 2) : 0;
+        $maxResponseTime = $responseTimeStats ? round($responseTimeStats->max_response, 2) : 0;
+        
+        // Get daily status timeline data for last 90 days - use aggregation instead of loading all
         $timelineStartDate = now()->subDays(90)->startOfDay();
+        
+        // Use database aggregation to get daily summaries instead of loading all checks
+        $dailySummaries = $uptimeMonitor->checks()
+            ->reorder() // Clear any orderBy from relationship definition
+            ->where('checked_at', '>=', $timelineStartDate)
+            ->selectRaw('DATE(checked_at) as check_date, 
+                        COUNT(*) as total_count,
+                        SUM(CASE WHEN status = "up" THEN 1 ELSE 0 END) as up_count,
+                        SUM(CASE WHEN status = "down" THEN 1 ELSE 0 END) as down_count')
+            ->groupBy('check_date')
+            ->orderBy('check_date', 'asc')
+            ->get();
+        
+        // For timeline incidents, we need to sample checks (limit to prevent memory issues)
         $timelineChecks = $uptimeMonitor->checks()
             ->where('checked_at', '>=', $timelineStartDate)
+            ->select('id', 'status', 'checked_at')
             ->orderBy('checked_at', 'asc')
+            ->limit(5000) // Limit to prevent memory exhaustion
             ->get();
         
         $dailyStatusData = [];
@@ -428,7 +505,17 @@ class UptimeMonitorController extends Controller
             $currentDate->addDay();
         }
         
-        // Group checks by day and calculate status
+        // Use daily summaries for faster processing
+        foreach ($dailySummaries as $summary) {
+            $dayKey = $summary->check_date;
+            if (isset($days[$dayKey])) {
+                $days[$dayKey]['total_count'] = $summary->total_count;
+                $days[$dayKey]['up_count'] = $summary->up_count;
+                $days[$dayKey]['down_count'] = $summary->down_count;
+            }
+        }
+        
+        // For incidents, process limited timeline checks (already limited to 5000)
         $previousCheck = null;
         foreach ($timelineChecks as $check) {
             $checkDate = $check->checked_at instanceof \Carbon\Carbon 
@@ -437,21 +524,12 @@ class UptimeMonitorController extends Controller
             $dayKey = $checkDate->format('Y-m-d');
             
             if (isset($days[$dayKey])) {
-                $days[$dayKey]['total_count']++;
-                if ($check->status === 'up') {
-                    $days[$dayKey]['up_count']++;
-                } else {
-                    $days[$dayKey]['down_count']++;
-                }
-                
-                // Track incidents (consecutive down checks)
+                // Track incidents (only for down status)
                 if ($check->status === 'down') {
                     $lastIncident = end($days[$dayKey]['incidents']);
                     if ($lastIncident && $previousCheck && $previousCheck->status === 'down') {
-                        // Continue existing incident - update end time
                         $days[$dayKey]['incidents'][count($days[$dayKey]['incidents']) - 1]['end'] = $checkDate;
                     } else {
-                        // New incident
                         $days[$dayKey]['incidents'][] = [
                             'start' => $checkDate,
                             'end' => $checkDate,
@@ -498,128 +576,70 @@ class UptimeMonitorController extends Controller
             ];
         }
         
-        // Calculate overall 90-day uptime
-        $totalTimelineChecks = $timelineChecks->count();
-        $totalTimelineUp = $timelineChecks->where('status', 'up')->count();
+        // Calculate overall 90-day uptime using aggregation
+        $timelineStats = $uptimeMonitor->checks()
+            ->reorder() // Clear any orderBy from relationship definition
+            ->where('checked_at', '>=', $timelineStartDate)
+            ->selectRaw('COUNT(*) as total, SUM(CASE WHEN status = "up" THEN 1 ELSE 0 END) as up_count')
+            ->first();
+        
+        $totalTimelineChecks = $timelineStats->total ?? 0;
+        $totalTimelineUp = $timelineStats->up_count ?? 0;
         $overallUptime90Days = $totalTimelineChecks > 0 
             ? round(($totalTimelineUp / $totalTimelineChecks) * 100, 2) 
             : 100;
         
-        $avgResponseTime = $allChecks->where('status', 'up')
-            ->whereNotNull('response_time')
-            ->avg('response_time');
-        $avgResponseTime = $avgResponseTime ? round($avgResponseTime, 2) : 0;
-        
-        $minResponseTime = $allChecks->where('status', 'up')
-            ->whereNotNull('response_time')
-            ->min('response_time');
-        $maxResponseTime = $allChecks->where('status', 'up')
-            ->whereNotNull('response_time')
-            ->max('response_time');
-        
-        // Chart data - use the same date range as statistics
-        // Determine grouping format based on range
-        $groupFormat = 'Y-m-d H:00'; // Default: group by hour
+        // Chart data - use database aggregation and limit points
+        $groupFormat = 'Y-m-d H:00';
         if ($range === '30d' || ($startDate && $endDate && $startDate->diffInDays($endDate) > 30)) {
-            $groupFormat = 'Y-m-d'; // Group by day for longer ranges
+            $groupFormat = 'Y-m-d';
         } elseif ($range === 'all') {
-            // For "all time", group by day if there's more than 30 days of data
-            $oldestCheck = $uptimeMonitor->checks()->orderBy('checked_at', 'asc')->first();
-            if ($oldestCheck) {
-                $checkedAt = $oldestCheck->checked_at instanceof \Carbon\Carbon 
-                    ? $oldestCheck->checked_at 
-                    : \Carbon\Carbon::parse($oldestCheck->checked_at);
-                if ($checkedAt->diffInDays(now()) > 30) {
-                    $groupFormat = 'Y-m-d'; // Group by day for all-time view with lots of data
-                }
-            }
+            // For "all", default to daily grouping to limit data points
+            $groupFormat = 'Y-m-d';
         }
         
-        // Use the same filtered data for charts (already filtered by date range above)
-        $recentChecksQuery = $allChecks;
+        // Use database aggregation for chart data instead of loading all records
+        $chartQuery = (clone $checksQuery);
+        
+        // Build group by clause based on format
+        if ($groupFormat === 'Y-m-d') {
+            $chartQuery->selectRaw('DATE(checked_at) as time_key,
+                                   COUNT(*) as total_count,
+                                   SUM(CASE WHEN status = "up" THEN 1 ELSE 0 END) as up_count,
+                                   AVG(CASE WHEN status = "up" AND response_time IS NOT NULL THEN response_time ELSE NULL END) as avg_response_time')
+                      ->groupBy('time_key')
+                      ->orderBy('time_key', 'asc');
+        } else {
+            $chartQuery->selectRaw('DATE_FORMAT(checked_at, "%Y-%m-%d %H:00") as time_key,
+                                   COUNT(*) as total_count,
+                                   SUM(CASE WHEN status = "up" THEN 1 ELSE 0 END) as up_count,
+                                   AVG(CASE WHEN status = "up" AND response_time IS NOT NULL THEN response_time ELSE NULL END) as avg_response_time')
+                      ->groupBy('time_key')
+                      ->orderBy('time_key', 'asc');
+        }
+        
+        // Limit to max 300 data points to prevent memory issues
+        $chartData = $chartQuery->limit(300)->get();
         
         $responseTimeData = [];
         $uptimeData = [];
         
-        if ($recentChecksQuery->isNotEmpty()) {
-            $grouped = $recentChecksQuery->groupBy(function($check) use ($groupFormat) {
-                $checkedAt = $check->checked_at instanceof \Carbon\Carbon 
-                    ? $check->checked_at 
-                    : \Carbon\Carbon::parse($check->checked_at);
-                return $checkedAt->format($groupFormat);
-            });
+        foreach ($chartData as $row) {
+            if ($groupFormat === 'Y-m-d') {
+                $timeCarbon = \Carbon\Carbon::createFromFormat('Y-m-d', $row->time_key)->startOfDay();
+            } else {
+                $timeCarbon = \Carbon\Carbon::createFromFormat('Y-m-d H:i', $row->time_key);
+            }
             
-            foreach ($grouped as $timeKey => $checks) {
-                $upCount = $checks->where('status', 'up')->count();
-                $totalCount = $checks->count();
-                
-                $upChecksWithResponseTime = $checks->where('status', 'up')
-                    ->filter(function($check) {
-                        return !is_null($check->response_time) && $check->response_time > 0;
-                    });
-                
-                $avgResponse = $upChecksWithResponseTime->isNotEmpty() 
-                    ? $upChecksWithResponseTime->avg('response_time') 
-                    : null;
-                
-                // Parse the time key based on format
-                if ($groupFormat === 'Y-m-d') {
-                    $timeCarbon = \Carbon\Carbon::createFromFormat('Y-m-d', $timeKey)->startOfDay();
-                } else {
-                    $timeCarbon = \Carbon\Carbon::createFromFormat('Y-m-d H:i', $timeKey);
-                }
-                
-                $responseTimeData[] = [
-                    'x' => $timeCarbon->toIso8601String(),
-                    'y' => $avgResponse ? round($avgResponse, 2) : null
-                ];
-                
-                $uptimeData[] = [
-                    'x' => $timeCarbon->toIso8601String(),
-                    'y' => $totalCount > 0 ? round(($upCount / $totalCount) * 100, 2) : 0
-                ];
-            }
-        } else {
-            // Fallback to all available data if no recent data
-            if ($allChecks->isNotEmpty()) {
-                $grouped = $allChecks->groupBy(function($check) use ($groupFormat) {
-                    $checkedAt = $check->checked_at instanceof \Carbon\Carbon 
-                        ? $check->checked_at 
-                        : \Carbon\Carbon::parse($check->checked_at);
-                    return $checkedAt->format($groupFormat);
-                });
-                
-                foreach ($grouped as $timeKey => $checks) {
-                    $upCount = $checks->where('status', 'up')->count();
-                    $totalCount = $checks->count();
-                    
-                    $upChecksWithResponseTime = $checks->where('status', 'up')
-                        ->filter(function($check) {
-                            return !is_null($check->response_time) && $check->response_time > 0;
-                        });
-                    
-                    $avgResponse = $upChecksWithResponseTime->isNotEmpty() 
-                        ? $upChecksWithResponseTime->avg('response_time') 
-                        : null;
-                    
-                    // Parse the time key based on format
-                    if ($groupFormat === 'Y-m-d') {
-                        $timeCarbon = \Carbon\Carbon::createFromFormat('Y-m-d', $timeKey)->startOfDay();
-                    } else {
-                        $timeCarbon = \Carbon\Carbon::createFromFormat('Y-m-d H:i', $timeKey);
-                    }
-                    
-                    $responseTimeData[] = [
-                        'x' => $timeCarbon->toIso8601String(),
-                        'y' => $avgResponse ? round($avgResponse, 2) : null
-                    ];
-                    
-                    $uptimeData[] = [
-                        'x' => $timeCarbon->toIso8601String(),
-                        'y' => $totalCount > 0 ? round(($upCount / $totalCount) * 100, 2) : 0
-                    ];
-                }
-            }
+            $responseTimeData[] = [
+                'x' => $timeCarbon->toIso8601String(),
+                'y' => $row->avg_response_time ? round($row->avg_response_time, 2) : null
+            ];
+            
+            $uptimeData[] = [
+                'x' => $timeCarbon->toIso8601String(),
+                'y' => $row->total_count > 0 ? round(($row->up_count / $row->total_count) * 100, 2) : 0
+            ];
         }
         
         $statusDistribution = [

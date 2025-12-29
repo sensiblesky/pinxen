@@ -105,3 +105,12 @@ require __DIR__.'/auth.php';
 Route::prefix('api/v1')->middleware(['api', \App\Http\Middleware\AuthenticateApiKey::class])->group(function () {
     Route::post('/server-stats', [\App\Http\Controllers\Api\ServerStatsController::class, 'store'])->name('api.server-stats.store');
 });
+
+// Public Agent Download Routes (uses server key for authentication)
+// These routes must be defined BEFORE client.php routes to avoid conflicts
+// Using a different path prefix to avoid route conflicts
+Route::prefix('public/agents')->group(function () {
+    Route::get('/{server}/download/{os}/{arch?}', [\App\Http\Controllers\AgentController::class, 'downloadPublic'])->name('agents.download.public');
+    Route::get('/{server}/install-script/{os}/{arch?}', [\App\Http\Controllers\AgentController::class, 'installScriptPublic'])->name('agents.install-script.public');
+    Route::get('/{server}/install-oneliner/{os}/{arch?}', [\App\Http\Controllers\AgentController::class, 'installScriptOneLinerPublic'])->name('agents.install-oneliner.public');
+});

@@ -40,7 +40,7 @@ class ServerStatusService
             return [
                 'status' => 'offline',
                 'last_seen' => $server->last_seen_at,
-                'minutes_ago' => $server->last_seen_at ? now()->diffInMinutes($server->last_seen_at) : null,
+                'minutes_ago' => $server->last_seen_at ? abs(now()->diffInMinutes($server->last_seen_at, false)) : null,
                 'reason' => 'Server is marked as inactive',
                 'threshold_used' => 'inactive'
             ];
@@ -57,7 +57,8 @@ class ServerStatusService
             ];
         }
 
-        $minutesAgo = now()->diffInMinutes($server->last_seen_at);
+        // Calculate minutes ago (ensure positive value)
+        $minutesAgo = abs(now()->diffInMinutes($server->last_seen_at, false));
         $lastSeen = $server->last_seen_at;
 
         // Determine status based on thresholds
@@ -155,7 +156,13 @@ class ServerStatusService
      */
     public function getStatusBadgeClass(Server $server): string
     {
-        $status = $this->determineStatus($server);
+        // Use server's custom thresholds
+        $status = $this->determineStatus(
+            $server,
+            $server->online_threshold_minutes,
+            $server->warning_threshold_minutes,
+            $server->offline_threshold_minutes
+        );
         
         return match($status['status']) {
             'online' => 'bg-success-transparent text-success',
@@ -173,7 +180,13 @@ class ServerStatusService
      */
     public function getStatusText(Server $server): string
     {
-        $status = $this->determineStatus($server);
+        // Use server's custom thresholds
+        $status = $this->determineStatus(
+            $server,
+            $server->online_threshold_minutes,
+            $server->warning_threshold_minutes,
+            $server->offline_threshold_minutes
+        );
         return ucfirst($status['status']);
     }
 

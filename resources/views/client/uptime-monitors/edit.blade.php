@@ -1,5 +1,7 @@
 @extends('layouts.master')
 
+@section('title', 'Edit Uptime Monitor - PingXeno')
+
 @section('styles')
 @endsection
 

@@ -1,5 +1,7 @@
 @extends('layouts.master')
 
+@section('title', 'Create API Monitor - PingXeno')
+
 @section('styles')
 @endsection
 

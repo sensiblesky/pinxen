@@ -124,5 +124,109 @@ Route::middleware(['auth', 'force.email.verification', 'force.2fa', 'admin'])->g
     Route::get('panel/reports/users/data', [\App\Http\Controllers\Panel\ReportController::class, 'getUsersData'])->name('panel.reports.users.data');
     Route::get('panel/reports/users/export', [\App\Http\Controllers\Panel\ReportController::class, 'exportUsers'])->name('panel.reports.users.export');
     Route::get('panel/reports/users/export-excel', [\App\Http\Controllers\Panel\ReportController::class, 'exportUsersExcel'])->name('panel.reports.users.export-excel');
+    
+    // Monitoring - Uptime Monitors
+    Route::get('panel/uptime-monitors/search-users', [\App\Http\Controllers\Panel\UptimeMonitorController::class, 'searchUsers'])->name('panel.uptime-monitors.search-users');
+    Route::resource('panel/uptime-monitors', \App\Http\Controllers\Panel\UptimeMonitorController::class)
+        ->parameters(['uptime-monitors' => 'uptimeMonitor'])
+        ->names([
+            'index' => 'panel.uptime-monitors.index',
+            'create' => 'panel.uptime-monitors.create',
+            'store' => 'panel.uptime-monitors.store',
+            'show' => 'panel.uptime-monitors.show',
+            'edit' => 'panel.uptime-monitors.edit',
+            'update' => 'panel.uptime-monitors.update',
+            'destroy' => 'panel.uptime-monitors.destroy',
+        ]);
+    Route::get('panel/uptime-monitors/{uptimeMonitor}/chart-data', [\App\Http\Controllers\Panel\UptimeMonitorController::class, 'getChartData'])->name('panel.uptime-monitors.chart-data');
+    Route::get('panel/uptime-monitors/{uptimeMonitor}/checks-data', [\App\Http\Controllers\Panel\UptimeMonitorController::class, 'getChecksData'])->name('panel.uptime-monitors.checks-data');
+    Route::get('panel/uptime-monitors/{uptimeMonitor}/alerts-data', [\App\Http\Controllers\Panel\UptimeMonitorController::class, 'getAlertsData'])->name('panel.uptime-monitors.alerts-data');
+    
+    // Monitoring - Domain Monitors
+    Route::resource('panel/domain-monitors', \App\Http\Controllers\Panel\DomainMonitorController::class)
+        ->parameters(['domain-monitors' => 'domainMonitor'])
+        ->names([
+            'index' => 'panel.domain-monitors.index',
+            'create' => 'panel.domain-monitors.create',
+            'store' => 'panel.domain-monitors.store',
+            'show' => 'panel.domain-monitors.show',
+            'edit' => 'panel.domain-monitors.edit',
+            'update' => 'panel.domain-monitors.update',
+            'destroy' => 'panel.domain-monitors.destroy',
+        ]);
+    Route::post('panel/domain-monitors/{domainMonitor}/recheck', [\App\Http\Controllers\Panel\DomainMonitorController::class, 'recheck'])->name('panel.domain-monitors.recheck');
+    
+    // Monitoring - SSL Monitors
+    Route::resource('panel/ssl-monitors', \App\Http\Controllers\Panel\SSLMonitorController::class)
+        ->parameters(['ssl-monitors' => 'sslMonitor'])
+        ->names([
+            'index' => 'panel.ssl-monitors.index',
+            'create' => 'panel.ssl-monitors.create',
+            'store' => 'panel.ssl-monitors.store',
+            'show' => 'panel.ssl-monitors.show',
+            'edit' => 'panel.ssl-monitors.edit',
+            'update' => 'panel.ssl-monitors.update',
+            'destroy' => 'panel.ssl-monitors.destroy',
+        ]);
+    Route::post('panel/ssl-monitors/{sslMonitor}/recheck', [\App\Http\Controllers\Panel\SSLMonitorController::class, 'recheck'])->name('panel.ssl-monitors.recheck');
+    
+    // Monitoring - DNS Monitors
+    Route::resource('panel/dns-monitors', \App\Http\Controllers\Panel\DNSMonitorController::class)
+        ->parameters(['dns-monitors' => 'dnsMonitor'])
+        ->names([
+            'index' => 'panel.dns-monitors.index',
+            'create' => 'panel.dns-monitors.create',
+            'store' => 'panel.dns-monitors.store',
+            'show' => 'panel.dns-monitors.show',
+            'edit' => 'panel.dns-monitors.edit',
+            'update' => 'panel.dns-monitors.update',
+            'destroy' => 'panel.dns-monitors.destroy',
+        ]);
+    Route::post('panel/dns-monitors/{dnsMonitor}/recheck', [\App\Http\Controllers\Panel\DNSMonitorController::class, 'recheck'])->name('panel.dns-monitors.recheck');
+    
+    // Monitoring - API Monitors
+    Route::resource('panel/api-monitors', \App\Http\Controllers\Panel\ApiMonitorController::class)
+        ->parameters(['api-monitors' => 'apiMonitor'])
+        ->names([
+            'index' => 'panel.api-monitors.index',
+            'create' => 'panel.api-monitors.create',
+            'store' => 'panel.api-monitors.store',
+            'show' => 'panel.api-monitors.show',
+            'edit' => 'panel.api-monitors.edit',
+            'update' => 'panel.api-monitors.update',
+            'destroy' => 'panel.api-monitors.destroy',
+        ]);
+    Route::get('panel/api-monitors/{apiMonitor}/checks-data', [\App\Http\Controllers\Panel\ApiMonitorController::class, 'getChecksData'])->name('panel.api-monitors.checks-data');
+    Route::get('panel/api-monitors/{apiMonitor}/alerts-data', [\App\Http\Controllers\Panel\ApiMonitorController::class, 'getAlertsData'])->name('panel.api-monitors.alerts-data');
+    Route::post('panel/api-monitors/{apiMonitor}/test-now', [\App\Http\Controllers\Panel\ApiMonitorController::class, 'testNow'])->name('panel.api-monitors.test-now');
+    Route::get('panel/api-monitors/{apiMonitor}/chart-data', [\App\Http\Controllers\Panel\ApiMonitorController::class, 'getChartDataApi'])->name('panel.api-monitors.chart-data');
+    Route::post('panel/api-monitors/{apiMonitor}/duplicate', [\App\Http\Controllers\Panel\ApiMonitorController::class, 'duplicate'])->name('panel.api-monitors.duplicate');
+    Route::post('panel/api-monitors/bulk-action', [\App\Http\Controllers\Panel\ApiMonitorController::class, 'bulkAction'])->name('panel.api-monitors.bulk-action');
+    Route::get('panel/api-monitors/{apiMonitor}/export-checks', [\App\Http\Controllers\Panel\ApiMonitorController::class, 'exportChecks'])->name('panel.api-monitors.export-checks');
+    Route::get('panel/api-monitors/{apiMonitor}/export-alerts', [\App\Http\Controllers\Panel\ApiMonitorController::class, 'exportAlerts'])->name('panel.api-monitors.export-alerts');
+    
+    // Monitoring - Servers
+    Route::resource('panel/servers', \App\Http\Controllers\Panel\ServerController::class)
+        ->parameters(['servers' => 'server'])
+        ->names([
+            'index' => 'panel.servers.index',
+            'create' => 'panel.servers.create',
+            'store' => 'panel.servers.store',
+            'show' => 'panel.servers.show',
+            'edit' => 'panel.servers.edit',
+            'update' => 'panel.servers.update',
+            'destroy' => 'panel.servers.destroy',
+        ]);
+    Route::post('panel/servers/{server}/regenerate-key', [\App\Http\Controllers\Panel\ServerController::class, 'regenerateKey'])->name('panel.servers.regenerate-key');
+    Route::get('panel/servers/{server}/disk-data', [\App\Http\Controllers\Panel\ServerController::class, 'getDiskData'])->name('panel.servers.disk-data');
+    Route::get('panel/servers/{server}/network-data', [\App\Http\Controllers\Panel\ServerController::class, 'getNetworkData'])->name('panel.servers.network-data');
+    Route::get('panel/servers/{server}/processes-data', [\App\Http\Controllers\Panel\ServerController::class, 'getProcessesData'])->name('panel.servers.processes-data');
+    
+    // Agent download and installation routes (panel)
+    Route::get('panel/agents/{server}/download/{os}/{arch?}', [\App\Http\Controllers\AgentController::class, 'download'])->name('panel.agents.download');
+    Route::get('panel/agents/{server}/install-script/{os}/{arch?}', [\App\Http\Controllers\AgentController::class, 'installScript'])->name('panel.agents.install-script');
+    Route::get('panel/agents/{server}/install-oneliner/{os}/{arch?}', [\App\Http\Controllers\AgentController::class, 'installScriptOneLiner'])->name('panel.agents.install-oneliner');
+    Route::post('panel/servers/{server}/install-via-ssh', [\App\Http\Controllers\Panel\ServerController::class, 'installViaSSH'])->name('panel.servers.install-via-ssh');
+    Route::post('panel/servers/{server}/test-ssh', [\App\Http\Controllers\Panel\ServerController::class, 'testSSH'])->name('panel.servers.test-ssh');
 });
 

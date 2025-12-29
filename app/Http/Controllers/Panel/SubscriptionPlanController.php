@@ -1,6 +1,4 @@
-
-Check History
- <?php
+<?php
 
 namespace App\Http\Controllers\Panel;
 

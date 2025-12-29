@@ -122,6 +122,10 @@ class ServerStatsController extends Controller
             'os_version' => ['nullable', 'string', 'max:100'],
             'ip_address' => ['nullable', 'string', 'max:45'], // IPv4 or IPv6 (validated separately)
             'agent_version' => ['nullable', 'string', 'max:50'],
+            'machine_id' => ['nullable', 'string', 'max:255'],
+            'system_uuid' => ['nullable', 'string', 'max:255'],
+            'disk_uuid' => ['nullable', 'string', 'max:255'],
+            'agent_id' => ['nullable', 'string', 'max:255'],
             'recorded_at' => ['nullable', 'date'], // ISO8601 timestamp from agent
         ]);
 
@@ -155,6 +159,21 @@ class ServerStatsController extends Controller
                     $serverUpdates['agent_installed_at'] = now();
                 }
             }
+            
+            // Update persistent agent identifiers (only on first send or if changed)
+            if (isset($validated['machine_id']) && !empty($validated['machine_id'])) {
+                $serverUpdates['machine_id'] = $validated['machine_id'];
+            }
+            if (isset($validated['system_uuid']) && !empty($validated['system_uuid'])) {
+                $serverUpdates['system_uuid'] = $validated['system_uuid'];
+            }
+            if (isset($validated['disk_uuid']) && !empty($validated['disk_uuid'])) {
+                $serverUpdates['disk_uuid'] = $validated['disk_uuid'];
+            }
+            if (isset($validated['agent_id']) && !empty($validated['agent_id'])) {
+                $serverUpdates['agent_id'] = $validated['agent_id'];
+            }
+            
             $serverUpdates['last_seen_at'] = now();
             
             if (!empty($serverUpdates)) {

@@ -1,5 +1,9 @@
 @extends('layouts.master')
 
+@section('title')
+{{ $server->name }} - Server - PingXeno
+@endsection
+
 @section('styles')
 <link href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" rel="stylesheet">
 <link href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css" rel="stylesheet">
@@ -779,15 +783,25 @@
                                     <td>
                                         @php
                                             $status = $server->getStatus();
+                                            // Use status from getStatus() to ensure consistency
+                                            $statusBadgeClass = match($status['status']) {
+                                                'online' => 'bg-success-transparent text-success',
+                                                'warning' => 'bg-warning-transparent text-warning',
+                                                'offline' => 'bg-danger-transparent text-danger',
+                                                default => 'bg-secondary-transparent text-secondary'
+                                            };
+                                            $statusText = ucfirst($status['status']);
                                         @endphp
-                                        <span class="badge {{ $server->getStatusBadgeClass() }}">
+                                        <span class="badge {{ $statusBadgeClass }}">
                                             <i class="ri-{{ $status['status'] === 'online' ? 'checkbox-circle-line' : ($status['status'] === 'warning' ? 'alert-line' : 'close-circle-line') }} me-1"></i>
-                                            {{ $server->getStatusText() }}
+                                            {{ $statusText }}
                                         </span>
                                         @if($status['minutes_ago'] !== null)
                                             <small class="text-muted d-block mt-1">
-                                                Last seen: {{ $status['last_seen']->diffForHumans() }} 
-                                                ({{ $status['minutes_ago'] }} minute(s) ago)
+                                                Last seen: {{ $status['last_seen']->diffForHumans() }}
+                                                @if($status['minutes_ago'] > 0)
+                                                    <span class="text-muted">({{ number_format($status['minutes_ago'], 1) }} min ago)</span>
+                                                @endif
                                             </small>
                                         @else
                                             <small class="text-muted d-block mt-1">Never seen</small>
@@ -882,6 +896,45 @@
                                         @endif
                                     </td>
                                 </tr>
+                                @if($server->agent_id || $server->machine_id || $server->system_uuid || $server->disk_uuid)
+                                <tr>
+                                    <td class="text-muted">Agent Identifiers:</td>
+                                    <td>
+                                        <div class="small">
+                                            @if($server->agent_id)
+                                                <div class="mb-1">
+                                                    <strong>Agent ID:</strong> 
+                                                    <code class="text-primary">{{ $server->agent_id }}</code>
+                                                    <button class="btn btn-sm btn-link p-0 ms-1" onclick="copyToClipboard('{{ $server->agent_id }}', 'Agent ID')" title="Copy Agent ID">
+                                                        <i class="ri-file-copy-line"></i>
+                                                    </button>
+                                                </div>
+                                            @endif
+                                            @if($server->machine_id)
+                                                <div class="mb-1">
+                                                    <strong>Machine ID:</strong> 
+                                                    <code class="text-info">{{ $server->machine_id }}</code>
+                                                </div>
+                                            @endif
+                                            @if($server->system_uuid)
+                                                <div class="mb-1">
+                                                    <strong>System UUID:</strong> 
+                                                    <code class="text-info">{{ $server->system_uuid }}</code>
+                                                </div>
+                                            @endif
+                                            @if($server->disk_uuid)
+                                                <div class="mb-1">
+                                                    <strong>Disk UUID:</strong> 
+                                                    <code class="text-info">{{ $server->disk_uuid }}</code>
+                                                </div>
+                                            @endif
+                                            <small class="text-muted d-block mt-2">
+                                                <i class="ri-information-line"></i> These identifiers help uniquely identify this server even if hostname changes.
+                                            </small>
+                                        </div>
+                                    </td>
+                                </tr>
+                                @endif
                                 <tr>
                                     <td class="text-muted">Last Seen:</td>
                                     <td>
@@ -900,43 +953,194 @@
                             </table>
                         </div>
 
-                        <!-- Agent Configuration -->
+                        <!-- Agent Installation -->
                         <div class="col-md-12 mb-4">
-                            <div class="alert alert-info">
-                                <h6 class="alert-heading"><i class="ri-key-line me-2"></i>Agent Configuration</h6>
-                                <p class="mb-2">Use these credentials to configure your Linux agent:</p>
-                                <div class="row">
-                                    <div class="col-md-6 mb-2">
-                                        <strong>Server Key:</strong>
-                                        <div class="input-group mt-1">
-                                            <input type="text" class="form-control" id="server-key-value" value="{{ $server->server_key }}" readonly>
-                                            <button class="btn btn-primary" type="button" onclick="copyServerKey()">
-                                                <i class="ri-file-copy-line me-1"></i>Copy
+                            <div class="card border">
+                                <div class="card-header bg-light">
+                                    <h6 class="card-title mb-0"><i class="ri-download-cloud-2-line me-2"></i>Agent Installation</h6>
+                                </div>
+                                <div class="card-body">
+                                    <!-- Installation Method Tabs -->
+                                    <ul class="nav nav-tabs mb-3" role="tablist">
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#download-tab" type="button" role="tab">
+                                                <i class="ri-download-line me-1"></i>Download
+                                            </button>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#script-tab" type="button" role="tab">
+                                                <i class="ri-terminal-box-line me-1"></i>Install Script
+                                            </button>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#ssh-tab" type="button" role="tab">
+                                                <i class="ri-terminal-line me-1"></i>SSH Auto-Install
+                                            </button>
+                                        </li>
+                                    </ul>
+
+                                    <div class="tab-content">
+                                        <!-- Download Tab -->
+                                        <div class="tab-pane fade show active" id="download-tab" role="tabpanel">
+                                            <p class="text-muted mb-3">Download the agent binary for your operating system:</p>
+                                            <div class="row">
+                                                <div class="col-md-6 mb-3">
+                                                    <label class="form-label">Operating System</label>
+                                                    <select class="form-select" id="download-os">
+                                                        <option value="linux">Linux</option>
+                                                        <option value="windows">Windows</option>
+                                                        <option value="darwin">macOS</option>
+                                                        <option value="freebsd">FreeBSD</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-6 mb-3">
+                                                    <label class="form-label">Architecture</label>
+                                                    <select class="form-select" id="download-arch">
+                                                        <option value="amd64">AMD64 (x86_64)</option>
+                                                        <option value="arm64">ARM64</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <a href="#" id="download-link" class="btn btn-primary" onclick="downloadAgent(event)">
+                                                <i class="ri-download-line me-1"></i>Download Agent
+                                            </a>
+                                            <p class="text-muted mt-3 small">
+                                                After downloading, extract and configure the agent with your server key and API key.
+                                            </p>
+                                        </div>
+
+                                        <!-- Install Script Tab -->
+                                        <div class="tab-pane fade" id="script-tab" role="tabpanel">
+                                            <p class="text-muted mb-3">Copy and paste this command on your server to automatically install the agent:</p>
+                                            <div class="row">
+                                                <div class="col-md-6 mb-3">
+                                                    <label class="form-label">Operating System</label>
+                                                    <select class="form-select" id="script-os">
+                                                        <option value="linux">Linux</option>
+                                                        <option value="windows">Windows</option>
+                                                        <option value="darwin">macOS</option>
+                                                        <option value="freebsd">FreeBSD</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-6 mb-3">
+                                                    <label class="form-label">Architecture</label>
+                                                    <select class="form-select" id="script-arch">
+                                                        <option value="amd64">AMD64 (x86_64)</option>
+                                                        <option value="arm64">ARM64</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="input-group mb-2">
+                                                <input type="text" class="form-control" id="install-oneliner" readonly>
+                                                <button class="btn btn-primary" type="button" onclick="copyInstallCommand()">
+                                                    <i class="ri-file-copy-line me-1"></i>Copy
+                                                </button>
+                                            </div>
+                                            <button class="btn btn-secondary btn-sm" onclick="loadInstallScript()">
+                                                <i class="ri-refresh-line me-1"></i>Refresh Command
+                                            </button>
+                                            <p class="text-muted mt-3 small">
+                                                <strong>Note:</strong> This command will download, install, and configure the agent automatically. Run it with sudo/administrator privileges.
+                                            </p>
+                                        </div>
+
+                                        <!-- SSH Auto-Install Tab -->
+                                        <div class="tab-pane fade" id="ssh-tab" role="tabpanel">
+                                            <p class="text-muted mb-3">Automatically install the agent via SSH (server must be publicly accessible):</p>
+                                            <form id="ssh-install-form">
+                                                <div class="row">
+                                                    <div class="col-md-6 mb-3">
+                                                        <label class="form-label">Host (IP or Hostname) <span class="text-danger">*</span></label>
+                                                        <input type="text" class="form-control" name="host" value="{{ $server->ip_address ?? $server->hostname ?? '' }}" placeholder="192.168.1.100 or example.com" required>
+                                                        <small class="text-muted">Leave empty to use server's IP/hostname</small>
+                                                    </div>
+                                                    <div class="col-md-6 mb-3">
+                                                        <label class="form-label">SSH Port</label>
+                                                        <input type="number" class="form-control" name="port" value="22" min="1" max="65535">
+                                                    </div>
+                                                    <div class="col-md-6 mb-3">
+                                                        <label class="form-label">Username <span class="text-danger">*</span></label>
+                                                        <input type="text" class="form-control" name="username" placeholder="root" required>
+                                                    </div>
+                                                    <div class="col-md-6 mb-3">
+                                                        <label class="form-label">Authentication Method</label>
+                                                        <select class="form-select" id="auth-method" onchange="toggleAuthMethod()">
+                                                            <option value="password">Password</option>
+                                                            <option value="key">SSH Key</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-6 mb-3" id="password-field">
+                                                        <label class="form-label">Password</label>
+                                                        <input type="password" class="form-control" name="password" placeholder="Enter SSH password">
+                                                    </div>
+                                                    <div class="col-md-12 mb-3" id="key-field" style="display: none;">
+                                                        <label class="form-label">Private Key</label>
+                                                        <textarea class="form-control" name="private_key" rows="5" placeholder="-----BEGIN RSA PRIVATE KEY-----&#10;..."></textarea>
+                                                        <small class="text-muted">Paste your SSH private key content</small>
+                                                    </div>
+                                                    <div class="col-md-6 mb-3">
+                                                        <label class="form-label">Operating System</label>
+                                                        <select class="form-select" name="os">
+                                                            <option value="auto">Auto-detect</option>
+                                                            <option value="linux">Linux</option>
+                                                            <option value="darwin">macOS</option>
+                                                            <option value="freebsd">FreeBSD</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-6 mb-3">
+                                                        <label class="form-label">Architecture</label>
+                                                        <select class="form-select" name="arch">
+                                                            <option value="amd64">AMD64 (x86_64)</option>
+                                                            <option value="arm64">ARM64</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="d-flex gap-2">
+                                                    <button type="button" class="btn btn-info" onclick="testSSHConnection()">
+                                                        <i class="ri-check-line me-1"></i>Test Connection
+                                                    </button>
+                                                    <button type="button" class="btn btn-primary" onclick="installViaSSH()">
+                                                        <i class="ri-download-cloud-2-line me-1"></i>Install Agent
+                                                    </button>
+                                                </div>
+                                                <div id="ssh-result" class="mt-3"></div>
+                                            </form>
+                                        </div>
+                                    </div>
+
+                                    <hr class="my-4">
+
+                                    <!-- Server Configuration Info -->
+                                    <div class="alert alert-light">
+                                        <h6 class="alert-heading"><i class="ri-key-line me-2"></i>Server Configuration</h6>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-2">
+                                                <strong>Server Key:</strong>
+                                                <div class="input-group mt-1">
+                                                    <input type="text" class="form-control" id="server-key-value" value="{{ $server->server_key }}" readonly>
+                                                    <button class="btn btn-primary" type="button" onclick="copyServerKey()">
+                                                        <i class="ri-file-copy-line me-1"></i>Copy
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6 mb-2">
+                                                <strong>API Endpoint:</strong>
+                                                <div class="input-group mt-1">
+                                                    <input type="text" class="form-control" value="{{ url('/api/v1/server-stats') }}" readonly>
+                                                    <button class="btn btn-primary" type="button" onclick="copyToClipboard('{{ url('/api/v1/server-stats') }}')">
+                                                        <i class="ri-file-copy-line me-1"></i>Copy
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="mt-2">
+                                            <button type="button" class="btn btn-warning btn-sm regenerate-key-btn" 
+                                                    data-uid="{{ $server->uid }}"
+                                                    data-name="{{ $server->name }}">
+                                                <i class="ri-refresh-line me-1"></i>Regenerate Server Key
                                             </button>
                                         </div>
                                     </div>
-                                    <div class="col-md-6 mb-2">
-                                        <strong>API Key:</strong>
-                                        <div class="input-group mt-1">
-                                            <input type="text" class="form-control" id="api-key-value" value="{{ $server->apiKey ? ($server->apiKey->key_prefix . '...') : 'N/A' }}" readonly>
-                                            <button class="btn btn-primary" type="button" onclick="copyApiKey()" disabled>
-                                                <i class="ri-file-copy-line me-1"></i>Copy
-                                            </button>
-                                        </div>
-                                        @if($server->apiKey)
-                                            <small class="text-muted">Name: {{ $server->apiKey->name }} - Full key is hidden for security. <a href="{{ route('api-keys.show', $server->apiKey) }}">View in API Keys</a></small>
-                                        @endif
-                                    </div>
-                                </div>
-                                <div class="mt-2">
-                                    <strong>API Endpoint:</strong> <code>{{ url('/api/v1/server-stats') }}</code>
-                                </div>
-                                <div class="mt-2">
-                                    <button type="button" class="btn btn-warning btn-sm regenerate-key-btn" 
-                                            data-uid="{{ $server->uid }}"
-                                            data-name="{{ $server->name }}">
-                                        <i class="ri-refresh-line me-1"></i>Regenerate Server Key
-                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -1017,6 +1221,27 @@
     });
     
     // Copy functions (called from onclick)
+    function copyToClipboard(text, label) {
+        navigator.clipboard.writeText(text).then(function() {
+            // Show success message
+            const toast = document.createElement('div');
+            toast.className = 'toast align-items-center text-white bg-success border-0';
+            toast.setAttribute('role', 'alert');
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">${label} copied to clipboard!</div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            `;
+            document.body.appendChild(toast);
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+            toast.addEventListener('hidden.bs.toast', () => toast.remove());
+        }).catch(function(err) {
+            console.error('Failed to copy:', err);
+        });
+    }
+
     function copyServerKey() {
         const input = document.getElementById('server-key-value');
         input.select();
@@ -1092,8 +1317,300 @@
                 });
             });
 
-            // Initialize Performance Score Circle
-            initPerformanceScoreCircle();
+    // Initialize Performance Score Circle
+    initPerformanceScoreCircle();
+
+    // Agent Installation Functions
+    function downloadAgent(e) {
+        e.preventDefault();
+        const os = document.getElementById('download-os').value;
+        const arch = document.getElementById('download-arch').value;
+        const url = '{{ route("agents.download", ["server" => $server->uid, "os" => ":os", "arch" => ":arch"]) }}'
+            .replace(':os', os)
+            .replace(':arch', arch);
+        window.location.href = url;
+    }
+
+    function loadInstallScript() {
+        const os = document.getElementById('script-os').value;
+        const arch = document.getElementById('script-arch').value;
+        // Use public route with server key for one-liner (so it works without authentication)
+        const baseUrl = '{{ route("agents.install-oneliner.public", ["server" => $server->uid, "os" => ":os", "arch" => ":arch"]) }}'
+            .replace(':os', os)
+            .replace(':arch', arch);
+        const url = baseUrl + '?key=' + encodeURIComponent('{{ $server->server_key }}');
+        
+        fetch(url, {
+            headers: {
+                'Accept': 'text/plain'
+            }
+        })
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        throw new Error(text || 'Failed to load script');
+                    });
+                }
+                return response.text();
+            })
+            .then(text => {
+                // Check if response is HTML (error page)
+                if (text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html')) {
+                    throw new Error('Received HTML instead of script. Please check the URL.');
+                }
+                document.getElementById('install-oneliner').value = text;
+            })
+            .catch(error => {
+                console.error('Error loading install script:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error.message || 'Failed to load installation script. Make sure you are logged in or use the server key.',
+                    html: '<pre style="text-align: left; font-size: 12px;">' + error.message + '</pre>'
+                });
+            });
+    }
+
+    function copyInstallCommand() {
+        const input = document.getElementById('install-oneliner');
+        const text = input.value;
+        
+        if (!text || text.trim() === '') {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Nothing to copy',
+                text: 'Please wait for the installation command to load, or click "Refresh Command"',
+                timer: 2000,
+                showConfirmButton: false
+            });
+            return;
+        }
+        
+        // Use modern Clipboard API
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(function() {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Copied!',
+                    text: 'Installation command copied to clipboard',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            }).catch(function(err) {
+                console.error('Failed to copy:', err);
+                // Fallback to old method
+                fallbackCopyTextToClipboard(text);
+            });
+        } else {
+            // Fallback for older browsers
+            fallbackCopyTextToClipboard(text);
+        }
+    }
+    
+    function fallbackCopyTextToClipboard(text) {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-999999px";
+        textArea.style.top = "-999999px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        
+        try {
+            const successful = document.execCommand('copy');
+            if (successful) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Copied!',
+                    text: 'Installation command copied to clipboard',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Copy failed',
+                    text: 'Please manually select and copy the command',
+                    timer: 3000,
+                    showConfirmButton: false
+                });
+            }
+        } catch (err) {
+            console.error('Fallback copy failed:', err);
+            Swal.fire({
+                icon: 'error',
+                title: 'Copy failed',
+                text: 'Please manually select and copy the command',
+                timer: 3000,
+                showConfirmButton: false
+            });
+        } finally {
+            document.body.removeChild(textArea);
+        }
+    }
+
+    function toggleAuthMethod() {
+        const method = document.getElementById('auth-method').value;
+        if (method === 'password') {
+            document.getElementById('password-field').style.display = 'block';
+            document.getElementById('key-field').style.display = 'none';
+            document.querySelector('[name="password"]').required = true;
+            document.querySelector('[name="private_key"]').required = false;
+        } else {
+            document.getElementById('password-field').style.display = 'none';
+            document.getElementById('key-field').style.display = 'block';
+            document.querySelector('[name="password"]').required = false;
+            document.querySelector('[name="private_key"]').required = true;
+        }
+    }
+
+    function testSSHConnection() {
+        const form = document.getElementById('ssh-install-form');
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData);
+        
+        // Add server info if host is empty
+        if (!data.host) {
+            data.host = '{{ $server->ip_address ?? $server->hostname ?? "" }}';
+        }
+
+        Swal.fire({
+            title: 'Testing Connection...',
+            text: 'Please wait',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        fetch('{{ route("servers.test-ssh", $server->uid) }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(result => {
+            Swal.close();
+            const resultDiv = document.getElementById('ssh-result');
+            if (result.success) {
+                resultDiv.innerHTML = '<div class="alert alert-success"><i class="ri-check-line me-2"></i>' + result.message + '<br><small>' + (result.system_info || '') + '</small></div>';
+            } else {
+                resultDiv.innerHTML = '<div class="alert alert-danger"><i class="ri-close-line me-2"></i>' + result.message + '</div>';
+            }
+        })
+        .catch(error => {
+            Swal.close();
+            Swal.fire('Error', 'Failed to test SSH connection', 'error');
+            console.error('Error:', error);
+        });
+    }
+
+    function installViaSSH() {
+        const form = document.getElementById('ssh-install-form');
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData);
+        
+        // Add server info if host is empty
+        if (!data.host) {
+            data.host = '{{ $server->ip_address ?? $server->hostname ?? "" }}';
+        }
+
+        Swal.fire({
+            title: 'Installing Agent...',
+            text: 'This may take a few minutes. Please wait.',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        fetch('{{ route("servers.install-via-ssh", $server->uid) }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(result => {
+            Swal.close();
+            const resultDiv = document.getElementById('ssh-result');
+            if (result.success) {
+                resultDiv.innerHTML = '<div class="alert alert-success"><i class="ri-check-line me-2"></i>' + result.message + '</div>';
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success!',
+                    text: 'Agent installed successfully via SSH',
+                    timer: 3000,
+                    showConfirmButton: false
+                });
+                // Reload page after 2 seconds to show updated status
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            } else {
+                resultDiv.innerHTML = '<div class="alert alert-danger"><i class="ri-close-line me-2"></i>' + result.message + '</div>';
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Installation Failed',
+                    text: result.message
+                });
+            }
+        })
+        .catch(error => {
+            Swal.close();
+            Swal.fire('Error', 'Failed to install agent via SSH', 'error');
+            console.error('Error:', error);
+        });
+    }
+
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            Swal.fire({
+                icon: 'success',
+                title: 'Copied!',
+                text: 'Copied to clipboard',
+                timer: 2000,
+                showConfirmButton: false
+            });
+        });
+    }
+
+    // Update download link when OS/Arch changes
+    document.getElementById('download-os')?.addEventListener('change', function() {
+        updateDownloadLink();
+    });
+    document.getElementById('download-arch')?.addEventListener('change', function() {
+        updateDownloadLink();
+    });
+
+    function updateDownloadLink() {
+        const os = document.getElementById('download-os').value;
+        const arch = document.getElementById('download-arch').value;
+        // Use public route with server key
+        const baseUrl = '{{ route("agents.download.public", ["server" => $server->uid, "os" => ":os", "arch" => ":arch"]) }}'
+            .replace(':os', os)
+            .replace(':arch', arch);
+        const url = baseUrl + '?key=' + encodeURIComponent('{{ $server->server_key }}');
+        document.getElementById('download-link').href = url;
+    }
+
+    // Load install script on tab change
+    document.getElementById('script-os')?.addEventListener('change', loadInstallScript);
+    document.getElementById('script-arch')?.addEventListener('change', loadInstallScript);
+
+    // Load install script on page load if script tab is active
+    if (document.querySelector('#script-tab.active')) {
+        loadInstallScript();
+    }
+
+    // Initialize download link
+    updateDownloadLink();
 
             // Initialize Charts - ensure they're initialized after DOM is ready
             // Small delay to ensure all data is loaded

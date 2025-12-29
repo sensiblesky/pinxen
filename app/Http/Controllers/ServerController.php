@@ -607,4 +607,60 @@ class ServerController extends Controller
             'data' => $data,
         ]);
     }
+
+    /**
+     * Install agent via SSH
+     */
+    public function installViaSSH(Request $request, Server $server): \Illuminate\Http\JsonResponse
+    {
+        $user = Auth::user();
+        
+        if ($server->user_id !== $user->id) {
+            abort(403, 'Unauthorized access.');
+        }
+
+        $validated = $request->validate([
+            'host' => 'nullable|string|max:255',
+            'port' => 'nullable|integer|min:1|max:65535',
+            'username' => 'required|string|max:255',
+            'password' => 'nullable|string',
+            'private_key' => 'nullable|string',
+            'os' => 'nullable|string|in:linux,windows,darwin,freebsd,auto',
+            'arch' => 'nullable|string|in:amd64,arm64',
+        ]);
+
+        $service = new \App\Services\SSHInstallationService();
+        $result = $service->installViaSSH($server, $validated);
+
+        if ($result['success']) {
+            return response()->json($result);
+        } else {
+            return response()->json($result, 400);
+        }
+    }
+
+    /**
+     * Test SSH connection
+     */
+    public function testSSH(Request $request, Server $server): \Illuminate\Http\JsonResponse
+    {
+        $user = Auth::user();
+        
+        if ($server->user_id !== $user->id) {
+            abort(403, 'Unauthorized access.');
+        }
+
+        $validated = $request->validate([
+            'host' => 'nullable|string|max:255',
+            'port' => 'nullable|integer|min:1|max:65535',
+            'username' => 'required|string|max:255',
+            'password' => 'nullable|string',
+            'private_key' => 'nullable|string',
+        ]);
+
+        $service = new \App\Services\SSHInstallationService();
+        $result = $service->testConnection($validated);
+
+        return response()->json($result);
+    }
 }

@@ -1,5 +1,7 @@
 @extends('layouts.master')
 
+@section('title', 'API Key Details - PingXeno')
+
 @section('content')
     <!-- Start::page-header -->
     <div class="page-header-breadcrumb mb-3">

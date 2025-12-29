@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ApiKey;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\JsonResponse;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -36,17 +37,28 @@ class ApiKeyController extends Controller
     /**
      * Store a newly created API key.
      */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): RedirectResponse|JsonResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string', 'max:1000'],
-            'scopes' => ['required', 'array', 'min:1'],
-            'scopes.*' => ['in:create,update,view,delete,*'],
-            'expires_at' => ['nullable', 'date', 'after:now'],
-            'allowed_ips' => ['nullable', 'string', 'max:500'],
-            'rate_limit' => ['nullable', 'integer', 'min:1', 'max:10000'],
-        ]);
+        try {
+            $validated = $request->validate([
+                'name' => ['required', 'string', 'max:255'],
+                'description' => ['nullable', 'string', 'max:1000'],
+                'scopes' => ['required', 'array', 'min:1'],
+                'scopes.*' => ['in:create,update,view,delete,*'],
+                'expires_at' => ['nullable', 'date', 'after:now'],
+                'allowed_ips' => ['nullable', 'string', 'max:500'],
+                'rate_limit' => ['nullable', 'integer', 'min:1', 'max:10000'],
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed.',
+                    'errors' => $e->errors()
+                ], 422);
+            }
+            throw $e;
+        }
 
         $user = Auth::user();
 
@@ -68,11 +80,25 @@ class ApiKeyController extends Controller
             'key_prefix' => $keyPrefix,
             'scopes' => $validated['scopes'],
             'description' => $validated['description'] ?? null,
-            'expires_at' => $validated['expires_at'] ? \Carbon\Carbon::parse($validated['expires_at']) : null,
+            'expires_at' => isset($validated['expires_at']) && $validated['expires_at'] ? \Carbon\Carbon::parse($validated['expires_at']) : null,
             'allowed_ips' => $allowedIps,
             'rate_limit' => $validated['rate_limit'] ?? 60,
             'is_active' => true,
         ]);
+
+            // If AJAX request, return JSON
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'API key created successfully.',
+                    'api_key' => [
+                        'id' => $apiKey->id,
+                        'name' => $apiKey->name,
+                        'key_prefix' => $apiKey->key_prefix,
+                        'scopes' => $apiKey->scopes,
+                    ]
+                ], 201);
+            }
 
         // Store the full key in session to show only once
         session()->flash('api_key_created', $key);
@@ -150,9 +176,9 @@ class ApiKeyController extends Controller
             'name' => $validated['name'],
             'scopes' => $validated['scopes'],
             'description' => $validated['description'] ?? null,
-            'expires_at' => $validated['expires_at'] ? \Carbon\Carbon::parse($validated['expires_at']) : null,
+            'expires_at' => isset($validated['expires_at']) && $validated['expires_at'] ? \Carbon\Carbon::parse($validated['expires_at']) : null,
             'allowed_ips' => $allowedIps,
-            'rate_limit' => $validated['rate_limit'] ?? 60,
+            'rate_limit' => isset($validated['rate_limit']) ? $validated['rate_limit'] : 60,
             'is_active' => $request->has('is_active') && $request->input('is_active') == '1',
         ]);
 

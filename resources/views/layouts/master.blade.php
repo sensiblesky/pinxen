@@ -13,10 +13,18 @@
         <meta name="keywords" content="laravel, laravel admin panel, laravel dashboard, bootstrap dashboard, bootstrap admin panel, vite laravel, admin dashboard, admin panel in laravel, admin dashboard ui, laravel admin, admin panel template, laravel framework, dashboard, admin dashboard template, laravel template.">
     
         <!-- Title-->
-        <title> Vyzor - Laravel Bootstrap 5 Premium Admin & Dashboard Template </title>
+        <title>@yield('title', 'PingXeno - Monitoring Dashboard')</title>
         
         <!-- Favicon -->
-        <link rel="icon" href="{{asset('build/assets/images/brand-logos/favicon.ico')}}" type="image/x-icon">
+        @php
+            $faviconPath = 'build/assets/images/brand-logos/favicon.ico';
+            $faviconExists = file_exists(public_path($faviconPath));
+        @endphp
+        @if($faviconExists)
+            <link rel="icon" href="{{asset($faviconPath)}}" type="image/x-icon">
+        @else
+            <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>" type="image/svg+xml">
+        @endif
     
         <!-- Main Theme Js -->
         <script src="{{asset('build/assets/main.js')}}"></script>

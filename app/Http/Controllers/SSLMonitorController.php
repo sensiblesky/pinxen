@@ -180,6 +180,8 @@ class SSLMonitorController extends Controller
             abort(403, 'Unauthorized access.');
         }
 
+        $user = Auth::user();
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'domain' => [

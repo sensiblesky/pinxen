@@ -29,9 +29,22 @@
 									
 									// Check if any specific menu item is active
 									$hasActiveMenu = request()->is('dashboard') || 
+													 request()->is('uptime-monitors*') || 
+													 request()->is('domain-monitors*') || 
+													 request()->is('ssl-monitors*') || 
+													 request()->is('dns-monitors*') || 
+													 request()->is('api-monitors*') || 
+													 request()->is('servers*') ||
 													 request()->is('subscriptions*') ||
+													 request()->is('api-keys*') ||
 													 (request()->is('panel') && !request()->is('panel/*')) ||
 													 request()->is('panel/users*') ||
+													 request()->is('panel/uptime-monitors*') || 
+													 request()->is('panel/domain-monitors*') || 
+													 request()->is('panel/ssl-monitors*') || 
+													 request()->is('panel/dns-monitors*') || 
+													 request()->is('panel/api-monitors*') || 
+													 request()->is('panel/servers*') ||
 													 request()->is('panel/subscription-plans*') ||
 													 request()->is('panel/plan-features*') ||
 													 request()->is('panel/subscribers*') ||
@@ -44,7 +57,6 @@
 													 request()->is('panel/storage*') ||
 													 request()->is('panel/cache-management*') ||
 													 request()->is('panel/faqs*') ||
-													 request()->is('panel/api-management*') ||
 													 request()->is('profile*') ||
 													 request()->is('account/security*');
 									
@@ -57,11 +69,18 @@
 								<!-- End::slide__category -->
 
 								@if($isClient)
-									<!-- Start::slide - Client Dashboards (Visible Only to Clients) -->
+									<!-- Start::slide - Client Home (Visible Only to Clients) -->
 									@php
-										$isClientDashboardActive = request()->is('dashboard') || $shouldDefaultToFirst;
+										$isClientHomeActive = request()->is('dashboard') || 
+															  request()->is('uptime-monitors*') || 
+															  request()->is('domain-monitors*') || 
+															  request()->is('ssl-monitors*') || 
+															  request()->is('dns-monitors*') || 
+															  request()->is('api-monitors*') || 
+															  request()->is('servers*') || 
+															  $shouldDefaultToFirst;
 									@endphp
-									<li class="slide has-sub {{ $isClientDashboardActive ? 'active open' : '' }}">
+									<li class="slide has-sub {{ $isClientHomeActive ? 'active open' : '' }}">
 										<a href="javascript:void(0);" class="side-menu__item">
 											<svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><path d="M133.66,34.34a8,8,0,0,0-11.32,0L40,116.69V216h64V152h48v64h64V116.69Z" opacity="0.2"/><line x1="16" y1="216" x2="240" y2="216" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><polyline points="152 216 152 152 104 152 104 216" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="40" y1="116.69" x2="40" y2="216" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="216" y1="216" x2="216" y2="116.69" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><path d="M24,132.69l98.34-98.35a8,8,0,0,1,11.32,0L232,132.69" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg>
 											<span class="side-menu__label">Home</span>
@@ -76,26 +95,8 @@
 													<svg xmlns="http://www.w3.org/2000/svg" class="side-menu-doublemenu__icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><path d="M133.66,34.34a8,8,0,0,0-11.32,0L40,116.69V216h64V152h48v64h64V116.69Z" opacity="0.2"/><line x1="16" y1="216" x2="240" y2="216" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><polyline points="152 216 152 152 104 152 104 216" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="40" y1="116.69" x2="40" y2="216" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="216" y1="216" x2="216" y2="116.69" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><path d="M24,132.69l98.34-98.35a8,8,0,0,1,11.32,0L232,132.69" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg>
 													Dashboard</a>
 											</li>
-										</ul>
-									</li>
-									<!-- End::slide - Client Dashboards -->
-
-									<!-- Start::slide - Monitoring Services -->
-									@php
-										$isMonitoringActive = request()->is('uptime-monitors*') || request()->is('domain-monitors*') || request()->is('ssl-monitors*') || request()->is('dns-monitors*') || request()->is('api-monitors*') || request()->is('servers*');
-									@endphp
-									<li class="slide has-sub {{ $isMonitoringActive ? 'active open' : '' }}">
-										<a href="javascript:void(0);" class="side-menu__item">
-											<svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><circle cx="128" cy="128" r="96" opacity="0.2"/><circle cx="128" cy="128" r="96" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><polyline points="128 72 128 128 184 128" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg>
-											<span class="side-menu__label">Monitoring</span>
-											<i class="ri-arrow-right-s-line side-menu__angle"></i>
-										</a>
-										<ul class="slide-menu child1">
-											<li class="slide side-menu__label1">
-												<a href="javascript:void(0)">Monitoring</a>
-											</li>
 											<!-- Web Monitoring Submenu -->
-											<li class="slide has-sub {{ request()->is('uptime-monitors*') || request()->is('domain-monitors*') || request()->is('ssl-monitors*') || request()->is('dns-monitors*') || request()->is('api-monitors*') || request()->is('servers*') ? 'active open' : '' }}">
+											<li class="slide has-sub {{ request()->is('uptime-monitors*') || request()->is('domain-monitors*') || request()->is('ssl-monitors*') || request()->is('dns-monitors*') || request()->is('api-monitors*') ? 'active open' : '' }}">
 												<a href="javascript:void(0);" class="side-menu__item">
 													<svg xmlns="http://www.w3.org/2000/svg" class="side-menu-doublemenu__icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><circle cx="128" cy="128" r="40" opacity="0.2"/><circle cx="128" cy="128" r="40" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><path d="M88,128a40,40,0,0,1,40-40,40,40,0,0,1,40,40,40,40,0,0,1-40,40,40,40,0,0,1-40-40Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><path d="M128,88a40,40,0,0,1,40,40,40,40,0,0,1-40,40,40,40,0,0,1-40-40,40,40,0,0,1,40-40Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><path d="M128,32a96,96,0,0,1,96,96,96,96,0,0,1-96,96,96,96,0,0,1-96-96,96,96,0,0,1,96-96Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg>
 													Web Monitoring
@@ -127,7 +128,6 @@
 															<i class="ri-code-s-slash-line me-2"></i>API Monitor
 														</a>
 													</li>
-													<!-- Future: Other monitors will be added here -->
 												</ul>
 											</li>
 											<!-- Server Monitoring -->
@@ -139,7 +139,7 @@
 											</li>
 										</ul>
 									</li>
-									<!-- End::slide - Monitoring Services -->
+									<!-- End::slide - Client Home -->
 
 									<!-- Start::slide - Developer Options -->
 									@php
@@ -147,7 +147,7 @@
 									@endphp
 									<li class="slide {{ $isDeveloperActive ? 'active' : '' }}">
 										<a href="{{ route('api-keys.index') }}" class="side-menu__item">
-											<svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Z" opacity="0.2"/><circle cx="128" cy="128" r="96" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><polyline points="128 72 128 128 184 128" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg>
+											<svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><polyline points="64 88 16 128 64 168" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><polyline points="192 88 240 128 192 168" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="160" y1="40" x2="96" y2="216" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg>
 											<span class="side-menu__label">Developer Options</span>
 										</a>
 									</li>
@@ -160,9 +160,17 @@
 									<li class="slide__category"><span class="category-name">Admin Panel</span></li>
 									<!-- End::slide__category -->
 
-									<!-- Start::slide - Admin Dashboards -->
+									<!-- Start::slide - Admin Home -->
 									@php
-										$isHomeSubmenuActive = (request()->is('panel') && !request()->is('panel/*')) || request()->is('panel/users*') || $shouldDefaultToFirst;
+										$isHomeSubmenuActive = (request()->is('panel') && !request()->is('panel/*')) || 
+																 request()->is('panel/users*') || 
+																 request()->is('panel/uptime-monitors*') || 
+																 request()->is('panel/domain-monitors*') || 
+																 request()->is('panel/ssl-monitors*') || 
+																 request()->is('panel/dns-monitors*') || 
+																 request()->is('panel/api-monitors*') || 
+																 request()->is('panel/servers*') || 
+																 $shouldDefaultToFirst;
 									@endphp
 									<li class="slide has-sub {{ $isHomeSubmenuActive ? 'active open' : '' }}">
 										<a href="javascript:void(0);" class="side-menu__item">
@@ -184,9 +192,51 @@
 													<svg xmlns="http://www.w3.org/2000/svg" class="side-menu-doublemenu__icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><path d="M128,32A96,96,0,0,0,63.8,199.38h0A72,72,0,0,1,128,160a40,40,0,1,1,40-40,40,40,0,0,1-40,40,72,72,0,0,1,64.2,39.37A96,96,0,0,0,128,32Z" opacity="0.2"/><path d="M63.8,199.37a72,72,0,0,1,128.4,0" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><circle cx="128" cy="128" r="96" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><circle cx="128" cy="120" r="40" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg>
 													Users Management</a>
 											</li>
+											<!-- Web Monitoring Submenu -->
+											<li class="slide has-sub {{ request()->is('panel/uptime-monitors*') || request()->is('panel/domain-monitors*') || request()->is('panel/ssl-monitors*') || request()->is('panel/dns-monitors*') || request()->is('panel/api-monitors*') ? 'active open' : '' }}">
+												<a href="javascript:void(0);" class="side-menu__item">
+													<svg xmlns="http://www.w3.org/2000/svg" class="side-menu-doublemenu__icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><circle cx="128" cy="128" r="40" opacity="0.2"/><circle cx="128" cy="128" r="40" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><path d="M88,128a40,40,0,0,1,40-40,40,40,0,0,1,40,40,40,40,0,0,1-40,40,40,40,0,0,1-40-40Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><path d="M128,88a40,40,0,0,1,40,40,40,40,0,0,1-40,40,40,40,0,0,1-40-40,40,40,0,0,1,40-40Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><path d="M128,32a96,96,0,0,1,96,96,96,96,0,0,1-96,96,96,96,0,0,1-96-96,96,96,0,0,1,96-96Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg>
+													Web Monitoring
+													<i class="ri-arrow-right-s-line side-menu__angle"></i>
+												</a>
+												<ul class="slide-menu child2">
+													<li class="slide {{ request()->is('panel/uptime-monitors*') ? 'active' : '' }}">
+														<a href="{{ route('panel.uptime-monitors.index') }}" class="side-menu__item">
+															<i class="ri-global-line me-2"></i>Uptime Monitors
+														</a>
+													</li>
+													<li class="slide {{ request()->is('panel/domain-monitors*') ? 'active' : '' }}">
+														<a href="{{ route('panel.domain-monitors.index') }}" class="side-menu__item">
+															<i class="ri-calendar-close-line me-2"></i>Domain Monitors
+														</a>
+													</li>
+													<li class="slide {{ request()->is('panel/ssl-monitors*') ? 'active' : '' }}">
+														<a href="{{ route('panel.ssl-monitors.index') }}" class="side-menu__item">
+															<i class="ri-shield-check-line me-2"></i>SSL Monitors
+														</a>
+													</li>
+													<li class="slide {{ request()->is('panel/dns-monitors*') ? 'active' : '' }}">
+														<a href="{{ route('panel.dns-monitors.index') }}" class="side-menu__item">
+															<i class="ri-dns-line me-2"></i>DNS Monitors
+														</a>
+													</li>
+													<li class="slide {{ request()->is('panel/api-monitors*') ? 'active' : '' }}">
+														<a href="{{ route('panel.api-monitors.index') }}" class="side-menu__item">
+															<i class="ri-code-s-slash-line me-2"></i>API Monitors
+														</a>
+													</li>
+												</ul>
+											</li>
+											<!-- Server Monitoring -->
+											<li class="slide {{ request()->is('panel/servers*') ? 'active' : '' }}">
+												<a href="{{ route('panel.servers.index') }}" class="side-menu__item">
+													<svg xmlns="http://www.w3.org/2000/svg" class="side-menu-doublemenu__icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><rect x="32" y="48" width="192" height="160" rx="8" opacity="0.2"/><rect x="32" y="48" width="192" height="160" rx="8" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="32" y1="96" x2="224" y2="96" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="32" y1="160" x2="224" y2="160" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><circle cx="64" cy="72" r="8" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><circle cx="64" cy="136" r="8" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><circle cx="64" cy="200" r="8" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg>
+													Server Monitoring
+												</a>
+											</li>
 										</ul>
 									</li>
-									<!-- End::slide - Admin Dashboards -->
+									<!-- End::slide - Admin Home -->
 
 									<!-- Start::slide__category -->
 									<li class="slide__category"><span class="category-name">Subscription</span></li>
@@ -229,6 +279,7 @@
 										</ul>
 									</li>
 									<!-- End::slide - Subscription Management -->
+
 
 									<!-- Start::slide__category - Reports -->
 									<li class="slide__category"><span class="category-name">Reports</span></li>
@@ -348,63 +399,6 @@
 									</li>
 									<!-- End::slide -->
 
-								<!-- Start::slide__category -->
-								<li class="slide__category"><span class="category-name">Developer Option</span></li>
-								<!-- End::slide__category -->
-
-								<!-- Start::slide -->
-								@php
-									$isApiManagementActive = request()->is('panel/api-management*');
-								@endphp
-								<li class="slide has-sub {{ $isApiManagementActive ? 'active open' : '' }}">
-									<a href="javascript:void(0);" class="side-menu__item">
-										<svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><path d="M48,48H208a8,8,0,0,1,8,8V200a8,8,0,0,1-8,8H48a8,8,0,0,1-8-8V56A8,8,0,0,1,48,48Z" opacity="0.2"/><path d="M48,48H208a8,8,0,0,1,8,8V200a8,8,0,0,1-8,8H48a8,8,0,0,1-8-8V56A8,8,0,0,1,48,48Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="88" y1="88" x2="168" y2="88" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="88" y1="128" x2="168" y2="128" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="88" y1="168" x2="136" y2="168" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg>
-										<span class="side-menu__label">API Management</span>
-										<i class="ri-arrow-right-s-line side-menu__angle"></i>
-									</a>
-									<ul class="slide-menu child1">
-										<li class="slide side-menu__label1">
-											<a href="javascript:void(0)">API Management</a>
-										</li>
-										<li class="slide {{ request()->is('panel/api-management*') && !request()->is('panel/api-management/create*') && !request()->is('panel/api-management/users*') && !request()->is('panel/api-management/usage*') && !request()->is('panel/api-management/scopes*') && !request()->is('panel/api-management/revoked*') ? 'active' : '' }}">
-											<a href="javascript:void(0);" class="side-menu__item">
-												<svg xmlns="http://www.w3.org/2000/svg" class="side-menu-doublemenu__icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><path d="M48,48H208a8,8,0,0,1,8,8V200a8,8,0,0,1-8,8H48a8,8,0,0,1-8-8V56A8,8,0,0,1,48,48Z" opacity="0.2"/><path d="M48,48H208a8,8,0,0,1,8,8V200a8,8,0,0,1-8,8H48a8,8,0,0,1-8-8V56A8,8,0,0,1,48,48Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="88" y1="88" x2="168" y2="88" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="88" y1="128" x2="168" y2="128" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="88" y1="168" x2="136" y2="168" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg>
-												My APIs
-											</a>
-										</li>
-										<li class="slide {{ request()->is('panel/api-management/create*') ? 'active' : '' }}">
-											<a href="javascript:void(0);" class="side-menu__item">
-												<svg xmlns="http://www.w3.org/2000/svg" class="side-menu-doublemenu__icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><circle cx="128" cy="128" r="96" opacity="0.2"/><circle cx="128" cy="128" r="96" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="128" y1="32" x2="128" y2="224" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="224" y1="128" x2="32" y2="128" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg>
-												Create API
-											</a>
-										</li>
-										<li class="slide {{ request()->is('panel/api-management/users*') ? 'active' : '' }}">
-											<a href="javascript:void(0);" class="side-menu__item">
-												<svg xmlns="http://www.w3.org/2000/svg" class="side-menu-doublemenu__icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><circle cx="128" cy="96" r="64" opacity="0.2"/><path d="M32,216c0-48.6,39.4-88,88-88s88,39.4,88,88" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><circle cx="128" cy="96" r="64" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg>
-												Users APIs
-											</a>
-										</li>
-										<li class="slide {{ request()->is('panel/api-management/usage*') ? 'active' : '' }}">
-											<a href="javascript:void(0);" class="side-menu__item">
-												<svg xmlns="http://www.w3.org/2000/svg" class="side-menu-doublemenu__icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><path d="M128,32a96,96,0,1,0,96,96A96,96,0,0,0,128,32Z" opacity="0.2"/><circle cx="128" cy="128" r="96" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><polyline points="128 72 128 128 184 128" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg>
-												API Usage
-											</a>
-										</li>
-										<li class="slide {{ request()->is('panel/api-management/scopes*') ? 'active' : '' }}">
-											<a href="javascript:void(0);" class="side-menu__item">
-												<svg xmlns="http://www.w3.org/2000/svg" class="side-menu-doublemenu__icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><circle cx="128" cy="128" r="96" opacity="0.2"/><circle cx="128" cy="128" r="96" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><circle cx="128" cy="128" r="32" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="128" y1="96" x2="128" y2="32" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="160" y1="128" x2="224" y2="128" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="128" y1="160" x2="128" y2="224" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="96" y1="128" x2="32" y2="128" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg>
-												API Scopes
-											</a>
-										</li>
-										<li class="slide {{ request()->is('panel/api-management/revoked*') ? 'active' : '' }}">
-											<a href="javascript:void(0);" class="side-menu__item">
-												<svg xmlns="http://www.w3.org/2000/svg" class="side-menu-doublemenu__icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><circle cx="128" cy="128" r="96" opacity="0.2"/><circle cx="128" cy="128" r="96" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="160" y1="96" x2="96" y2="160" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="160" y1="160" x2="96" y2="96" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg>
-												Revoked APIs
-											</a>
-										</li>
-									</ul>
-								</li>
-								<!-- End::slide -->
 								@endif
 
 								<!-- Start::slide__category - Account Management (Visible to All Users) -->

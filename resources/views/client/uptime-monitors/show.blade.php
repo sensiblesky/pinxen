@@ -1,5 +1,9 @@
 @extends('layouts.master')
 
+@section('title')
+{{ $monitor->name }} - Uptime Monitor - PingXeno
+@endsection
+
 @section('styles')
     <!-- DataTables CSS -->
     <link href="https://cdn.datatables.net/1.12.1/css/dataTables.bootstrap5.min.css" rel="stylesheet">

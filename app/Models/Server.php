@@ -34,6 +34,10 @@ class Server extends Model
         'last_seen_at',
         'agent_installed_at',
         'agent_version',
+        'machine_id',
+        'system_uuid',
+        'disk_uuid',
+        'agent_id',
     ];
 
     protected $casts = [
